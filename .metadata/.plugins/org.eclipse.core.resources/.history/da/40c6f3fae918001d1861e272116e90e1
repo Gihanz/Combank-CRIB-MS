@@ -1,0 +1,12 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 11, 2022 - 1:49:07 AM
+ *  ***************************************
+ */
+
+package com.nable.crib.model;
+
+public class ConReportedNames {
+
+}

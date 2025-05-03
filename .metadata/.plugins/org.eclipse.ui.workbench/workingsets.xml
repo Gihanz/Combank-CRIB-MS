@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workingSetManager>
+<workingSet editPageId="org.eclipse.jdt.internal.ui.DynamicSourcesWorkingSet" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1659864122083_0" label="Java Main Sources" name="Java Main Sources">
+<item elementID="=crib/src\/main\/java" factoryID="org.eclipse.jdt.ui.PersistableJavaElementFactory"/>
+</workingSet>
+<workingSet editPageId="org.eclipse.jdt.internal.ui.DynamicSourcesWorkingSet" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1659864122095_1" label="Java Test Sources" name="Java Test Sources">
+<item elementID="=ConfigServer/src\/test\/java" factoryID="org.eclipse.jdt.ui.PersistableJavaElementFactory"/>
+</workingSet>
+<workingSet editPageId="org.eclipse.ui.resourceWorkingSetPage" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1659948844170_3" label="crib" name="crib"/>
+<workingSet editPageId="org.eclipse.ui.resourceWorkingSetPage" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1661023377462_6" label="common-utils" name="common-utils"/>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1659864133718_2" label="Window Working Set" name="Aggregate for window 1659864133718"/>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1659952687115_4" label="Multiple Working Sets" name="Aggregate:Java Main Sources:Java Test Sources:">
+<workingSet IMemento.internal.id="Java Main Sources"/>
+<workingSet IMemento.internal.id="Java Test Sources"/>
+</workingSet>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1659955250854_5" label="Multiple Working Sets" name="Aggregate:crib:Java Main Sources:Java Test Sources:">
+<workingSet IMemento.internal.id="crib"/>
+<workingSet IMemento.internal.id="Java Main Sources"/>
+<workingSet IMemento.internal.id="Java Test Sources"/>
+</workingSet>
+<mruList name="crib"/>
+</workingSetManager>

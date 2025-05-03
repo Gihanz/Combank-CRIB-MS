@@ -1,0 +1,12 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 11, 2022 - 1:41:36 AM
+ *  ***************************************
+ */
+
+package com.nable.crib.model;
+
+public class ConRelationshipDetails {
+
+}

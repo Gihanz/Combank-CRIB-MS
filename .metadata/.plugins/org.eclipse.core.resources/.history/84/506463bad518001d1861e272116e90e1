@@ -1,0 +1,12 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 10, 2022 - 10:58:22 PM
+ *  ***************************************
+ */
+
+package com.nable.crib.model;
+
+public class ConCreditFacility {
+
+}

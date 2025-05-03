@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="false" key="isRegEx"/>
+		<item value="" key="selection"/>
+		<item value="true" key="casesensitive"/>
+		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
+		<item value="true" key="wholeword"/>
+		<list key="findhistory">
+			<item value="list"/>
+			<item value="wsdlLocation"/>
+			<item value="javax.xml.bind"/>
+			<item value="jack"/>
+			<item value="consCreditFacilityDetailsData"/>
+			<item value="consCreditFacilityDetailsLast24MonthsData"/>
+			<item value="consCreditFacilityDetailsLast24MonthsDataList"/>
+			<item value="getCorporaterCribData"/>
+			<item value="conCreditFacilityDetailsLast24MonthsData"/>
+			<item value="conCreditFacilityDetailsLast24MonthsDataList"/>
+			<item value="conDemographicDetailsData"/>
+			<item value="con"/>
+			<item value="log"/>
+			<item value="&lt;&lt;&lt;"/>
+			<item value="&gt;&gt;&gt;"/>
+		</list>
+		<list key="replacehistory">
+			<item value="corpCreditFacilityDetailsData"/>
+			<item value="corpCreditFacilityDetailsLast24MonthsData"/>
+			<item value="corpCreditFacilityDetailsLast24MonthsDataList"/>
+			<item value="consCreditFacilityDetailsLast24MonthsData"/>
+			<item value="consCreditFacilityDetailsLast24MonthsDataList"/>
+			<item value="consDemographicDetailsData"/>
+			<item value=""/>
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="284" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="391" key="DIALOG_HEIGHT"/>
+		<item value="1527" key="DIALOG_X_ORIGIN"/>
+		<item value="136" key="DIALOG_Y_ORIGIN"/>
+	</section>
+</section>

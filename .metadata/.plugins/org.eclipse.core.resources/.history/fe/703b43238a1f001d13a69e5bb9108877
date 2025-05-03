@@ -1,0 +1,552 @@
+package com.nable.crib.controller;
+
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+
+import com.nable.crib.cribApi.ConRspOperations;
+import com.nable.crib.cribApi.CorpRspOperations;
+import com.nable.crib.model.RequestDetail;
+import com.nable.crib.model.RequestError;
+import com.nable.crib.model.consumer.ConCatalogueDescription;
+import com.nable.crib.model.consumer.ConCreditFacility;
+import com.nable.crib.model.consumer.ConCreditFacilityDetails;
+import com.nable.crib.model.consumer.ConCreditFacilityDetailsLast24Months;
+import com.nable.crib.model.consumer.ConCreditFacilityOfGlanceStatus;
+import com.nable.crib.model.consumer.ConDemographicDetails;
+import com.nable.crib.model.consumer.ConDishonouredChequeDetails;
+import com.nable.crib.model.consumer.ConDishonouredChequeSummary;
+import com.nable.crib.model.consumer.ConDisputeDetails;
+import com.nable.crib.model.consumer.ConEmploymentDetails;
+import com.nable.crib.model.consumer.ConIdentificationDetails;
+import com.nable.crib.model.consumer.ConInquiriesBySubject;
+import com.nable.crib.model.consumer.ConLast24Months;
+import com.nable.crib.model.consumer.ConLendingInstutionsInquiries;
+import com.nable.crib.model.consumer.ConMailingAddresses;
+import com.nable.crib.model.consumer.ConPermanentAddresses;
+import com.nable.crib.model.consumer.ConPotentialAndCurrentLiabilities;
+import com.nable.crib.model.consumer.ConPotentialAndCurrentLiabilitiesHeader;
+import com.nable.crib.model.consumer.ConRelationshipAddressDetails;
+import com.nable.crib.model.consumer.ConRelationshipDetails;
+import com.nable.crib.model.consumer.ConReportedNames;
+import com.nable.crib.model.consumer.ConSearchResults;
+import com.nable.crib.model.consumer.ConSettledCreditFacilitiesDetails;
+import com.nable.crib.model.consumer.ConSettledCreditFacilitiesSummary;
+import com.nable.crib.model.corporate.CorpCatalogueDescription;
+import com.nable.crib.model.corporate.CorpCreditFacility;
+import com.nable.crib.model.corporate.CorpCreditFacilityDetails;
+import com.nable.crib.model.corporate.CorpCreditFacilityDetailsLast24Months;
+import com.nable.crib.model.corporate.CorpCreditFacilityOfGlanceStatus;
+import com.nable.crib.model.corporate.CorpDishonouredChequeDetails;
+import com.nable.crib.model.corporate.CorpDishonouredChequeSummary;
+import com.nable.crib.model.corporate.CorpDisputeDetails;
+import com.nable.crib.model.corporate.CorpEconomicActivityHistory;
+import com.nable.crib.model.corporate.CorpFirmographicDetails;
+import com.nable.crib.model.corporate.CorpIdentificationDetails;
+import com.nable.crib.model.corporate.CorpInquiriesBySubject;
+import com.nable.crib.model.corporate.CorpLast24Months;
+import com.nable.crib.model.corporate.CorpLendingInstutionsInquiries;
+import com.nable.crib.model.corporate.CorpMailingAddresses;
+import com.nable.crib.model.corporate.CorpPermanentAddresses;
+import com.nable.crib.model.corporate.CorpPotentialAndCurrentLiabilities;
+import com.nable.crib.model.corporate.CorpPotentialAndCurrentLiabilitiesHeader;
+import com.nable.crib.model.corporate.CorpRelationshipAddressDetails;
+import com.nable.crib.model.corporate.CorpRelationshipDetails;
+import com.nable.crib.model.corporate.CorpReportedNames;
+import com.nable.crib.model.corporate.CorpSearchResults;
+import com.nable.crib.model.corporate.CorpSettledCreditFacilitiesDetails;
+import com.nable.crib.model.corporate.CorpSettledCreditFacilitiesSummary;
+import com.nable.crib.request.CribApiInvokeRequest;
+import com.nable.crib.request.MultiHitRequestBean;
+import com.nable.crib.request.MultiHitRequestXmlGenerator;
+import com.nable.crib.request.PerHitCost;
+import com.nable.crib.request.SingleHitRequestBean;
+import com.nable.crib.request.SingleHitRequestXmlGenerator;
+import com.nable.crib.response.ResponseBean;
+import com.nable.crib.response.Status;
+import com.nable.crib.service.ConsumerService;
+import com.nable.crib.service.CorporateService;
+import com.nable.crib.service.RequestDetailService;
+import com.nable.crib.service.RequestErrorService;
+import com.nable.crib.util.encrypt.CribEncryption;
+import com.nable.crib.util.soap.LiveRequestInvoker;
+import com.nable.crib.util.soap.LiveRequestInvokerSoap;
+
+import io.swagger.v3.oas.annotations.Operation;
+
+@RestController
+public class CribController {
+	
+	static Logger log = LoggerFactory.getLogger(CribController.class);
+	
+	@Value("${crib.wsdl.url}")
+	private URL wsdl;
+	@Value("${crib.apiUsername}")
+	private String apiUsername;
+	@Value("${crib.apiPassword}")
+	private String apiPassword;
+	@Value("${crib.encryptionKey}")
+	private String encryptionKey;
+	@Value("${crib.decryptionKey}")
+	private String decryptionKey;
+	
+	@Autowired
+    private ConsumerService consumerService;
+	
+	@Autowired
+    private CorporateService corporateService;
+	
+	@Autowired
+    private RequestDetailService requestDetailService;
+	
+	@Autowired
+    private RequestErrorService requestErrorService;
+	
+	@Autowired
+	ConRspOperations conRsOp;
+	
+	@Autowired
+	CorpRspOperations corpRsOp;
+
+	@Operation(summary = "Test working status", description = "Test working status by get")
+	@GetMapping("/test")
+	public String testService() {
+		return "Service working fine";
+	}
+	
+	@Operation(summary = "Invoke CRIB Api and insert into DB", description = "Invoke CRIB Api, Read H2H response and insert into DB")
+	@PostMapping("/cribApiInvoke")
+	public ResponseEntity<ResponseBean> cribApiInvoke(@RequestBody CribApiInvokeRequest requestObj) {
+
+		String requestXml = null;
+		String responseType = null;
+		String bureauRequestId = null;
+		String subjectType = null;
+		PerHitCost perHitCost = null;
+		ResponseBean responseBean;
+		
+		Long requestDetailId = requestObj.getRequestDetailId();
+		String username = requestObj.getUsername();
+		log.info("RequestDetailId : "+requestDetailId+ " ------ by : "+username);
+		log.info("RequestXml : "+requestXml);
+		
+		try {
+			responseBean = new ResponseBean();
+			
+			if(requestObj.getRequestType().equalsIgnoreCase("M")) {
+				MultiHitRequestBean multiHitRequestObj = requestObj.getMultiHitRequestBean();
+				MultiHitRequestXmlGenerator reqXmlGen = new MultiHitRequestXmlGenerator();
+				requestXml = reqXmlGen.generateReqXml(multiHitRequestObj);
+				
+				subjectType = requestObj.getMultiHitRequestBean().getSubjectType();
+				perHitCost = requestObj.getMultiHitRequestBean().getPerHitCost();
+			}else {
+				SingleHitRequestBean singleHitRequestObj = requestObj.getSingleHitRequestBean();	
+				SingleHitRequestXmlGenerator reqXmlGen = new SingleHitRequestXmlGenerator();
+				requestXml = reqXmlGen.generateReqXml(singleHitRequestObj);	
+				
+				subjectType = requestObj.getSingleHitRequestBean().getSubjectType();
+				perHitCost = requestObj.getSingleHitRequestBean().getPerHitCost();
+			}
+						
+			LiveRequestInvoker client = new LiveRequestInvoker(wsdl);
+			LiveRequestInvokerSoap soapClient = client.getLiveRequestInvokerSoap();
+			
+			CribEncryption cribEncryptor = new CribEncryption();
+			String sRequestXml = cribEncryptor.encryptorSHA(requestXml, encryptionKey);
+			String sUserName = cribEncryptor.encryptorSHA(apiUsername, encryptionKey);
+			String sPassword = cribEncryptor.encryptorSHA(apiPassword, encryptionKey);
+	    
+			// Sending SOAP Request to CRIB API.
+			log.info("Sending SOAP request to H2H CRIB API...");
+			String sResponseXml = soapClient.postRequest(sRequestXml,sUserName,sPassword);
+			log.info("Response received from H2H CRIB API.");
+			//log.info("Encrypted ResponseXml : "+sResponseXml);
+			
+			String responseXml = cribEncryptor.decryptorSHA(sResponseXml, decryptionKey);
+			
+			// ============== If Consumer ==============//		
+			if(subjectType.equals("1")) {
+				
+				Document doc = convertStringToXMLDocument(responseXml);							
+				responseType = getResposeType(doc);
+				if(responseType.equals("singleHit")) {
+					
+					ConDemographicDetails conDemographicDetails                                               = conRsOp.insrtDemographicDetails(doc, requestDetailId, username);
+					List<ConIdentificationDetails> conIdentificationDetailsList                               = conRsOp.insrtIdentificationDetails(doc, requestDetailId, username);						
+					List<ConMailingAddresses> conMailingAddressesList                                         = conRsOp.insrtMailingAddresses(doc, requestDetailId, username);
+					List<ConPermanentAddresses> conPermanentAddressesList                                     = conRsOp.insrtPermanentAddresses(doc, requestDetailId, username);
+					List<ConReportedNames> conReportedNamesList                                               = conRsOp.insrtReportedNames(doc, requestDetailId, username);
+					List<ConEmploymentDetails> conEmploymentDetailsList                                       = conRsOp.insrtEmploymentDetails(doc, requestDetailId, username);
+					List<ConRelationshipDetails> conRelationshipDetailsList                                   = conRsOp.insrtRelationshipDetails(doc, requestDetailId, username);
+					List<ConRelationshipAddressDetails> conRelationshipAddressDetailsList                     = conRsOp.insrtRelationshipAddressDetails(doc, requestDetailId, username);
+					List<ConSettledCreditFacilitiesDetails> conSettledCreditFacilitiesDetailsList             = conRsOp.insrtSettledCFDetails(doc, requestDetailId, username);
+					List<ConSettledCreditFacilitiesSummary> conSettledCreditFacilitiesSummaryList             = conRsOp.insrtSettledCFSummary(doc, requestDetailId, username);
+					List<ConLendingInstutionsInquiries> conLendingInstutionsInquiriesList                     = conRsOp.insrtLendingInstInquiries(doc, requestDetailId, username);
+					List<ConInquiriesBySubject> conInquiriesBySubjectList                                     = conRsOp.insrtInquiriesBySubject(doc, requestDetailId, username);
+					List<ConCreditFacility> conCreditFacilityList                                             = conRsOp.insrtCreditFacility(doc, requestDetailId, username);
+					List<ConCreditFacilityDetails> conCreditFacilityDetailsList                               = conRsOp.insrtCreditFacilityDetails(doc, requestDetailId, username);
+					List<ConLast24Months> conLast24MonthsList                                                 = conRsOp.insrtLast24Months(doc, requestDetailId, username);
+					List<ConCreditFacilityDetailsLast24Months> conCreditFacilityDetailsLast24MonthsList       = conRsOp.insrtCFForLast24Months(doc, requestDetailId, username);
+					List<ConDisputeDetails> conDisputeDetailsList                                             = conRsOp.insrtDisputeDetails(doc, requestDetailId, username);
+					List<ConPotentialAndCurrentLiabilitiesHeader> conPotentialAndCurrentLiabilitiesHeaderList = conRsOp.insrtPotAndCurrLiabilitiesHeader(doc, requestDetailId, username);
+					List<ConPotentialAndCurrentLiabilities> conPotentialAndCurrentLiabilitiesList             = conRsOp.insrtPotAndCurrLiabilities(doc, requestDetailId, username);
+					List<ConCreditFacilityOfGlanceStatus> conCreditFacilityOfGlanceStatusList                 = conRsOp.insrtCFOfGlanceStatus(doc, requestDetailId, username);
+					List<ConDishonouredChequeSummary> conDishonouredChequeSummaryList                         = conRsOp.insrtDishonChequeSummary(doc, requestDetailId, username);
+					List<ConDishonouredChequeDetails> conDishonouredChequeDetailsList                         = conRsOp.insrtDishonChequeDetails(doc, requestDetailId, username);
+					List<ConCatalogueDescription> conCatalogueDescriptionList                                 = conRsOp.insrtCatalogueDescription(doc, requestDetailId, username);
+					List<ConSearchResults> conSearchResultsList                                               = conRsOp.insrtSearchResults(doc, requestDetailId, username);
+					
+					consumerService.saveAll(conDemographicDetails, 
+											conIdentificationDetailsList,
+											conMailingAddressesList,
+											conPermanentAddressesList,
+											conReportedNamesList,
+											conEmploymentDetailsList,
+											conRelationshipDetailsList,
+											conRelationshipAddressDetailsList,
+											conSettledCreditFacilitiesDetailsList,
+											conSettledCreditFacilitiesSummaryList,
+											conLendingInstutionsInquiriesList,
+											conInquiriesBySubjectList,
+											conCreditFacilityList,
+											conCreditFacilityDetailsList,
+											conLast24MonthsList,
+											conCreditFacilityDetailsLast24MonthsList,
+											conDisputeDetailsList,
+											conPotentialAndCurrentLiabilitiesHeaderList,
+											conPotentialAndCurrentLiabilitiesList,
+											conCreditFacilityOfGlanceStatusList,
+											conDishonouredChequeSummaryList,
+											conDishonouredChequeDetailsList,
+											conCatalogueDescriptionList,
+											conSearchResultsList);	
+
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 1, 1, Status.SINGLE_HIT, "-", "-", perHitCost.getHit());
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+									
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getHit());
+					responseBean.setStatusCode(Status.SINGLE_HIT.getStatusCode());
+					responseBean.setStatus(Status.SINGLE_HIT.getStatus());
+					responseBean.setSearchResults(conRsOp.getSearchResults(doc));
+					
+				}else if(responseType.equals("multiHit")) {
+	
+					bureauRequestId = doc.getDocumentElement().getAttribute("REFERENCE-NO");
+					List<ConSearchResults> conSearchResultsList = conRsOp.insrtSearchResults(doc, requestDetailId, username);
+					consumerService.saveSearchResults(conSearchResultsList);
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 0, 1, Status.MULTI_HIT, "-", "-", perHitCost.getMultiHit());
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getMultiHit());
+					responseBean.setStatusCode(Status.MULTI_HIT.getStatusCode());
+					responseBean.setStatus(Status.MULTI_HIT.getStatus());
+					responseBean.setMultiHit(conRsOp.getMultiHitResponse(doc));
+					
+				}else if(responseType.equals("noHit")) {
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 0, 0, Status.NO_HIT, "-", "-", perHitCost.getNoHit());
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getNoHit());
+					responseBean.setStatusCode(Status.NO_HIT.getStatusCode());
+					responseBean.setStatus(Status.NO_HIT.getStatus());
+				}else {	
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");
+					String errorCode = (doc.getElementsByTagName("ERROR-CODE").getLength() > 0) ? doc.getElementsByTagName("ERROR-CODE").item(0).getTextContent() : "-";
+					String error = (doc.getElementsByTagName("ERROR").getLength() > 0) ? doc.getElementsByTagName("ERROR").item(0).getTextContent() : "-";
+					
+					List<RequestError> requestErrorsList = insrtRequestErrors(doc, requestDetailId, username);
+					requestErrorService.saveRequestErrors(requestErrorsList);
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 0, 0, Status.ERROR_HIT, errorCode, error, 0.0);
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+					
+					// Setting ResponseBean
+					responseBean.setErrorCode(errorCode);
+					responseBean.setError(error);
+					responseBean.setStatusCode(Status.ERROR_HIT.getStatusCode());
+					responseBean.setStatus(Status.ERROR_HIT.getStatus());
+				}
+				
+			// ============== If Corporate ==============//		
+			}else if(subjectType.equals("0")) {
+				
+				Document doc = convertStringToXMLDocument(responseXml);								
+				responseType = getResposeType(doc);
+				if(responseType.equals("singleHit")) {
+					
+					CorpFirmographicDetails corpFirmographicDetails                                             = corpRsOp.insrtFirmographicDetails(doc, requestDetailId, username);
+					List<CorpIdentificationDetails> corpIdentificationDetailsList                               = corpRsOp.insrtIdentificationDetails(doc, requestDetailId, username);
+					List<CorpMailingAddresses> corpMailingAddressesList                                         = corpRsOp.insrtMailingAddresses(doc, requestDetailId, username);
+					List<CorpPermanentAddresses> corpPermanentAddressesList                                     = corpRsOp.insrtPermanentAddresses(doc, requestDetailId, username);
+					List<CorpReportedNames> corpReportedNamesList                                               = corpRsOp.insrtReportedNames(doc, requestDetailId, username);
+					List<CorpRelationshipDetails> corpRelationshipDetailsList                                   = corpRsOp.insrtRelationshipDetails(doc, requestDetailId, username);
+					List<CorpRelationshipAddressDetails> corpRelationshipAddressDetailsList                     = corpRsOp.insrtRelationshipAddressDetails(doc, requestDetailId, username);
+					List<CorpSettledCreditFacilitiesDetails> corpSettledCreditFacilitiesDetailsList             = corpRsOp.insrtSettledCFDetails(doc, requestDetailId, username);
+					List<CorpSettledCreditFacilitiesSummary> corpSettledCreditFacilitiesSummaryList             = corpRsOp.insrtSettledCFSummary(doc, requestDetailId, username);
+					List<CorpLendingInstutionsInquiries> corpLendingInstutionsInquiriesList                     = corpRsOp.insrtLendingInstInquiries(doc, requestDetailId, username);
+					List<CorpInquiriesBySubject> corpInquiriesBySubjectList                                     = corpRsOp.insrtInquiriesBySubject(doc, requestDetailId, username);
+					List<CorpCreditFacility> corpCreditFacilityList                                             = corpRsOp.insrtCreditFacility(doc, requestDetailId, username);
+					List<CorpCreditFacilityDetails> corpCreditFacilityDetailsList                               = corpRsOp.insrtCreditFacilityDetails(doc, requestDetailId, username);
+					List<CorpLast24Months> corpLast24MonthsList                                                 = corpRsOp.insrtLast24Months(doc, requestDetailId, username);
+					List<CorpCreditFacilityDetailsLast24Months> corpCreditFacilityDetailsLast24MonthsList       = corpRsOp.insrtCFForLast24Months(doc, requestDetailId, username);
+					List<CorpDisputeDetails> corpDisputeDetailsList                                             = corpRsOp.insrtDisputeDetails(doc, requestDetailId, username);
+					List<CorpPotentialAndCurrentLiabilitiesHeader> corpPotentialAndCurrentLiabilitiesHeaderList = corpRsOp.insrtPotAndCurrLiabilitiesHeader(doc, requestDetailId, username);
+					List<CorpPotentialAndCurrentLiabilities> corpPotentialAndCurrentLiabilitiesList             = corpRsOp.insrtPotAndCurrLiabilities(doc, requestDetailId, username);
+					List<CorpCreditFacilityOfGlanceStatus> corpCreditFacilityOfGlanceStatusList                 = corpRsOp.insrtCFOfGlanceStatus(doc, requestDetailId, username);
+					List<CorpDishonouredChequeSummary> corpDishonouredChequeSummaryList                         = corpRsOp.insrtDishonChequeSummary(doc, requestDetailId, username);
+					List<CorpDishonouredChequeDetails> corpDishonouredChequeDetailsList                         = corpRsOp.insrtDishonChequeDetails(doc, requestDetailId, username);
+					List<CorpEconomicActivityHistory> corpEconomicActivityHistoryList                           = corpRsOp.insrtEconActivityHistory(doc, requestDetailId, username);
+					List<CorpCatalogueDescription> corpCatalogueDescriptionList                                 = corpRsOp.insrtCatalogueDescription(doc, requestDetailId, username);
+					List<CorpSearchResults> corpSearchResultsList                                               = corpRsOp.insrtSearchResults(doc, requestDetailId, username);
+					
+					corporateService.saveAll(corpFirmographicDetails, 
+											 corpIdentificationDetailsList,
+											 corpMailingAddressesList,
+											 corpPermanentAddressesList,
+											 corpReportedNamesList,
+											 corpRelationshipDetailsList,
+											 corpRelationshipAddressDetailsList,
+											 corpSettledCreditFacilitiesDetailsList,
+											 corpSettledCreditFacilitiesSummaryList,
+											 corpLendingInstutionsInquiriesList,
+											 corpInquiriesBySubjectList,
+											 corpCreditFacilityList,
+											 corpCreditFacilityDetailsList,
+											 corpLast24MonthsList,
+											 corpCreditFacilityDetailsLast24MonthsList,
+											 corpDisputeDetailsList,
+											 corpPotentialAndCurrentLiabilitiesHeaderList,
+											 corpPotentialAndCurrentLiabilitiesList,
+											 corpCreditFacilityOfGlanceStatusList,
+											 corpDishonouredChequeSummaryList,
+											 corpDishonouredChequeDetailsList,
+											 corpEconomicActivityHistoryList,
+											 corpCatalogueDescriptionList,
+											 corpSearchResultsList);
+					
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");			
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 1, 1, Status.SINGLE_HIT, "-", "-", perHitCost.getHit());
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getHit());
+					responseBean.setStatusCode(Status.SINGLE_HIT.getStatusCode());
+					responseBean.setStatus(Status.SINGLE_HIT.getStatus());
+					responseBean.setSearchResults(corpRsOp.getSearchResults(doc));
+					
+				}else if(responseType.equals("multiHit")) {
+					bureauRequestId = doc.getDocumentElement().getAttribute("REFERENCE-NO");
+					List<CorpSearchResults> corpSearchResultsList =  corpRsOp.insrtSearchResults(doc, requestDetailId, username);
+					corporateService.saveSearchResults(corpSearchResultsList);
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 0, 1, Status.MULTI_HIT, "-", "-", perHitCost.getMultiHit());
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getMultiHit());
+					responseBean.setStatusCode(Status.MULTI_HIT.getStatusCode());
+					responseBean.setStatus(Status.MULTI_HIT.getStatus());
+					responseBean.setMultiHit(corpRsOp.getMultiHitResponse(doc));					
+					
+				}else if(responseType.equals("noHit")) {
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 0, 0, Status.NO_HIT, "-", "-", perHitCost.getNoHit());
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getNoHit());
+					responseBean.setStatusCode(Status.NO_HIT.getStatusCode());
+					responseBean.setStatus(Status.NO_HIT.getStatus());
+				}else {	
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");
+					String errorCode = (doc.getElementsByTagName("ERROR-CODE").getLength() > 0) ? doc.getElementsByTagName("ERROR-CODE").item(0).getTextContent() : "-";
+					String error = (doc.getElementsByTagName("ERROR").getLength() > 0) ? doc.getElementsByTagName("ERROR").item(0).getTextContent() : "-";
+					
+					List<RequestError> requestErrorsList = insrtRequestErrors(doc, requestDetailId, username);
+					requestErrorService.saveRequestErrors(requestErrorsList);
+					RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, 0, 0, Status.ERROR_HIT, errorCode, error, 0.0);
+					requestDetailService.update(requestDetailId, updateRequestDetail);
+					
+					// Setting ResponseBean
+					responseBean.setErrorCode(errorCode);
+					responseBean.setError(error);
+					responseBean.setStatusCode(Status.ERROR_HIT.getStatusCode());
+					responseBean.setStatus(Status.ERROR_HIT.getStatus());
+				}	
+				
+			}
+			
+			log.info("#--------------------------------- Request : "+requestDetailId+" completed ---------------------------------#");
+			MDC.clear();
+			return ResponseEntity.status(HttpStatus.OK).body(responseBean);
+			
+		} catch(Exception e) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			
+			e.printStackTrace();
+			log.info("Exception occured : " +sw.toString());
+			
+			Double cost = 0.0;
+			Status status = Status.API_ERROR;					
+			int isHit = 0;
+			int isCribAvailable = 0;
+							
+			if(responseType != null) {
+				if(responseType.equals("singleHit")) {
+					isHit = 1;	
+					cost = perHitCost.getHit();
+				}else if(responseType.equals("multiHit")) {
+					isHit = 1;	
+					cost = perHitCost.getMultiHit();
+				}else if(responseType.equals("noHit")) {
+					isHit = 1;	
+					cost = perHitCost.getNoHit();
+				}				
+				status = Status.APPLICATION_ERROR;						
+			}
+//			RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, isCribAvailable, isHit, status, status.getStatusCode(), e.fillInStackTrace().toString(), cost);
+//			requestDetailService.update(requestDetailId, updateRequestDetail);
+//			
+			responseBean = new ResponseBean();
+			responseBean.setPerHitCost(cost);
+			responseBean.setStatusCode(status.getStatusCode());
+			responseBean.setStatus(status.getStatus());
+			responseBean.setErrorCode(status.getStatusCode());
+			responseBean.setError("Exception occured : " +e.fillInStackTrace());
+			
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBean);
+					
+		}
+		//return responseBeanList;
+//		MDC.clear();
+//		return ResponseEntity.status(HttpStatus.OK).body(responseBean);
+	}
+	
+	// Convert XML string to XML document.
+	private static Document convertStringToXMLDocument(String xmlString) {
+		
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = null;
+        try{
+            builder = factory.newDocumentBuilder();
+            xmlString = sanitizeXmlChars(xmlString);
+            Document doc = builder.parse(new InputSource(new StringReader(xmlString)));
+            doc.getDocumentElement().normalize();
+            return doc;
+        }catch(Exception e){
+            e.printStackTrace();
+            log.info("Error convertStringToXMLDocument : Error occured while converting H2H response String to XML document");
+            log.info("Error convertStringToXMLDocument : " +e.fillInStackTrace());
+        }
+        return null;
+    }
+	
+	// Clear XML (Remove invalid characters)
+	private static String sanitizeXmlChars(String xmlString) {
+		
+	    if (xmlString == null) {
+	    	return null;
+	    }else if(xmlString.equals("")) {
+	    	return "";
+	    }else {
+	    	Pattern xmlInvalidChars = Pattern.compile("[^\\u0009\\u000A\\u000D\\u0020-\\uD7FF\\uE000-\\uFFFD\\x{10000}-\\x{10FFFF}]");
+	    	return xmlInvalidChars.matcher(xmlString).replaceAll("").replaceAll("&(?!amp;)", "&amp;");
+	    }
+	}
+	
+	// Return response type
+	private String getResposeType(Document doc) {
+		
+		String responseType = null;			
+		String responseTypeCode = doc.getElementsByTagName("RESPONSE-TYPE").item(0).getAttributes().item(0).getTextContent();
+		System.out.println("ResponseTypeCode: "+responseTypeCode);
+
+		if(responseTypeCode.equals("1")){
+			responseType = "singleHit";
+		}else if(responseTypeCode.equals("2")){
+			responseType = "noHit";
+		}else if(responseTypeCode.equals("3")){
+			responseType = "multiHit";
+		}else{
+			responseType = "error";
+		}
+        
+        System.out.println("ResponseType: "+responseType);
+        log.info("ResponseType: "+responseType);
+		return responseType;
+	}
+	
+	//================ Updating Request Details ================//
+	private RequestDetail updateRequestDetails(Long requestDetailId, String bureauReferenceNo, int isCribAvailable, int isHit, Status status, String errorCode, String error, Double perHitCost) {
+  			
+		RequestDetail requestDetail = new RequestDetail();
+		requestDetail.setBureauReferenceNo(bureauReferenceNo);
+		requestDetail.setIsCribAvailable(isCribAvailable);
+		requestDetail.setIsHit(isHit);
+		requestDetail.setStatusCode(status.getStatusCode());
+		requestDetail.setStatusDescription(status.getStatus());
+		requestDetail.setStatus("CRIB_COMPLETED");
+		requestDetail.setErrorCode(errorCode);
+		requestDetail.setError(error);
+		requestDetail.setSourceName("API");
+		requestDetail.setReportPath("N/A");
+		requestDetail.setPerHitCost(perHitCost);
+		requestDetail.setReportId(requestDetailId);
+		requestDetail.setIsActive(1);
+		requestDetail.setModifiedBy("API");
+		requestDetail.setModified(new Date(System.currentTimeMillis()));
+		
+		return requestDetail;
+	}
+	
+	//================ Setting Error ================//
+	public List<RequestError> insrtRequestErrors(Document doc, Long requestDetailId, String username) {
+				
+		List<RequestError> requestErrorList = new ArrayList<RequestError>();			
+		for(int x=0; x<doc.getElementsByTagName("ERROR").getLength(); x++) {
+					
+			String errorCode = (doc.getElementsByTagName("ERROR-CODE").getLength() > 0) ? doc.getElementsByTagName("ERROR-CODE").item(x).getTextContent() : "-";
+			String errorDescription = (doc.getElementsByTagName("ERROR").getLength() > 0) ? doc.getElementsByTagName("ERROR").item(x).getTextContent() : "-";
+
+			RequestError requestError = new RequestError();
+			requestError.setRequestDetailId(requestDetailId);
+			requestError.setErrorCode(errorCode);
+			requestError.setErrorDescription(errorDescription);
+			requestError.setIsActive(1);			
+			requestError.setCreatedBy(username);
+			requestError.setCreated(new Date(System.currentTimeMillis()));
+			
+			requestErrorList.add(requestError);				
+		}
+		return requestErrorList;
+	}
+
+}

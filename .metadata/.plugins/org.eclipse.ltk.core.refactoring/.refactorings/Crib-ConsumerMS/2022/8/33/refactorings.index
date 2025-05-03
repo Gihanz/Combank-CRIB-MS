@@ -1,0 +1,28 @@
+1659955357934	Delete element
+1660043191234	Delete element
+1660043327549	Delete elements
+1660043485418	Rename type 'WsServiceImpl'
+1660062943406	Rename resource 'banner.txt'
+1660062988304	Rename resource 'banneffr.txt'
+1660108030279	Rename package 'com.nable.crib.config'
+1660108177705	Rename package 'com.nable.crib.utill'
+1660108294430	Rename package 'com.nable.crib.repository'
+1660152758644	Rename type 'conCreditFacilityDetails'
+1660167151929	Move compilation units
+1660199324339	Rename type 'ConCreditFacilityDetailsLast24Months'
+1660206824150	Move compilation units
+1660207711439	Rename package 'com.nable.crib.util.encrypt.util'
+1660209611280	Delete element
+1660209886953	Move 'LiveRequestinvoker.wsdl' to 'wsdl'
+1660212013525	Rename package 'com.nable.crib.cribOps'
+1660212028892	Rename package 'com.nable.crib.crib'
+1660237566048	Rename type 'ConDemographicDetailsRepo'
+1660238351888	Rename type 'ConDemographicDetailsDao'
+1660241485747	Delete elements
+1660241510641	Rename package 'com.nable.crib.dao'
+1660282082413	Delete element
+1660282098190	Delete element
+1660288507197	Delete element
+1660338229979	Delete element
+1660338423592	Delete element
+1660388611910	Delete element

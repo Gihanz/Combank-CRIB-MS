@@ -1,0 +1,51 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 11, 2022 - 1:19:55 AM
+ *  ***************************************
+ */
+
+package com.nable.crib.cons.model;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.nable.crib.cons.model.audit.Auditable;
+
+import lombok.Data;
+
+@Data
+@Entity
+@Table(name = "CRIB_CONS_MAILING_ADDRESSES")
+public class ConsMailingAddresses extends Auditable {
+	
+	@Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "ID")
+    private Long id;
+	
+	@Column(name = "REQUEST_DETAIL_ID")
+    private Long requestDetailId;
+	
+	@Column(name = "SNO")
+    private Integer sNo;
+	
+	@Column(name = "REPORTED_DATE")
+    private Date reportedDate;
+	
+	@Column(name = "ADDRESS", length = 500)
+    private String address;
+	
+	@Column(name = "BLOCK_FLAG", columnDefinition = "SMALLINT")
+	protected Short blockFlag;
+	
+	@Column(name = "RUID")
+    private Long ruId;
+
+}

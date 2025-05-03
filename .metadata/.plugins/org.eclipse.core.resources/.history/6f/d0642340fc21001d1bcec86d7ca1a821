@@ -1,0 +1,225 @@
+package com.nable.crib.cons.controller;
+
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+
+import com.nable.crib.cons.model.ConCatalogueDescription;
+import com.nable.crib.cons.model.ConCreditFacility;
+import com.nable.crib.cons.model.ConCreditFacilityDetails;
+import com.nable.crib.cons.model.ConCreditFacilityDetailsLast24Months;
+import com.nable.crib.cons.model.ConCreditFacilityOfGlanceStatus;
+import com.nable.crib.cons.model.ConDemographicDetails;
+import com.nable.crib.cons.model.ConDishonouredChequeDetails;
+import com.nable.crib.cons.model.ConDishonouredChequeSummary;
+import com.nable.crib.cons.model.ConDisputeDetails;
+import com.nable.crib.cons.model.ConEmploymentDetails;
+import com.nable.crib.cons.model.ConIdentificationDetails;
+import com.nable.crib.cons.model.ConInquiriesBySubject;
+import com.nable.crib.cons.model.ConLast24Months;
+import com.nable.crib.cons.model.ConLendingInstutionsInquiries;
+import com.nable.crib.cons.model.ConMailingAddresses;
+import com.nable.crib.cons.model.ConPermanentAddresses;
+import com.nable.crib.cons.model.ConPotentialAndCurrentLiabilities;
+import com.nable.crib.cons.model.ConPotentialAndCurrentLiabilitiesHeader;
+import com.nable.crib.cons.model.ConRelationshipAddressDetails;
+import com.nable.crib.cons.model.ConRelationshipDetails;
+import com.nable.crib.cons.model.ConReportedNames;
+import com.nable.crib.cons.model.ConSearchResults;
+import com.nable.crib.cons.model.ConSettledCreditFacilitiesDetails;
+import com.nable.crib.cons.model.ConSettledCreditFacilitiesSummary;
+import com.nable.crib.cons.request.ConsumerApiInvokeRequest;
+import com.nable.crib.cons.request.MultiHitRequestBean;
+import com.nable.crib.cons.request.MultiHitRequestXmlGenerator;
+import com.nable.crib.cons.request.PerHitCost;
+import com.nable.crib.cons.request.RequestType;
+import com.nable.crib.cons.request.SingleHitRequestBean;
+import com.nable.crib.cons.request.SingleHitRequestXmlGenerator;
+import com.nable.crib.cons.response.ApiInvokeResponseBean;
+import com.nable.crib.cons.response.ConsumerDataResponse;
+import com.nable.crib.cons.response.Status;
+import com.nable.crib.cons.service.ConsumerService;
+import com.nable.crib.cons.soap.LiveRequestInvoker;
+import com.nable.crib.cons.soap.LiveRequestInvokerSoap;
+import com.nable.crib.cons.util.ConsumerResponseReader;
+import com.nable.crib.cons.util.encrypt.CribEncryption;
+
+import io.swagger.v3.oas.annotations.Operation;
+
+@RestController
+public class ConsumerController {
+	
+	static Logger log = LoggerFactory.getLogger(ConsumerController.class);
+	
+	@Value("${crib.wsdl.url}")
+	private URL wsdl;
+	@Value("${crib.apiUsername}")
+	private String apiUsername;
+	@Value("${crib.apiPassword}")
+	private String apiPassword;
+	@Value("${crib.encryptionKey}")
+	private String encryptionKey;
+	@Value("${crib.decryptionKey}")
+	private String decryptionKey;
+	
+	@Autowired
+    private ConsumerService consumerService;
+	
+	@Autowired
+	ConsumerResponseReader conRsOp;
+
+	@Operation(summary = "Test working status", description = "Test working status by get")
+	@GetMapping("/test")
+	public String testService() {
+		return "Service working fine";
+	}
+	
+	@Operation(summary = "Invoke CRIB Consumer Api and insert into DB", description = "Invoke CRIB Consumer Api, Read H2H response and insert into DB")
+	@PostMapping("/invokeConsumerApi")
+	public ResponseEntity<ApiInvokeResponseBean> invokeConsumerApi(@RequestBody ConsumerApiInvokeRequest requestObj) {
+
+		try {
+			
+			
+			return ResponseEntity.status(HttpStatus.OK).body(responseBean);
+			
+		} catch(Exception e) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			
+			e.printStackTrace();
+			log.info("Exception occured : " +sw.toString());
+			
+			Double cost = 0.0;
+			Status status = Status.API_ERROR;					
+			int isHit = 0;
+			int isCribAvailable = 0;
+							
+			if(responseType != null) {
+				if(responseType.equals("singleHit")) {
+					isHit = 1;	
+					cost = perHitCost.getHit();
+				}else if(responseType.equals("multiHit")) {
+					isHit = 1;	
+					cost = perHitCost.getMultiHit();
+				}else if(responseType.equals("noHit")) {
+					isHit = 1;	
+					cost = perHitCost.getNoHit();
+				}				
+				status = Status.APPLICATION_ERROR;						
+			}
+//			RequestDetail updateRequestDetail = updateRequestDetails(requestDetailId, bureauRequestId, isCribAvailable, isHit, status, status.getStatusCode(), e.fillInStackTrace().toString(), cost);
+//			requestDetailService.update(requestDetailId, updateRequestDetail);
+			
+			responseBean = new ApiInvokeResponseBean();
+			responseBean.setPerHitCost(cost);
+			responseBean.setStatusCode(status.getStatusCode());
+			responseBean.setStatus(status.getStatus());
+			responseBean.setMessage("Error occurred : "+e.toString());
+			responseBean.setErrorCode(status.getStatusCode());
+			responseBean.setError("Exception occured : " +e.fillInStackTrace());
+			
+			MDC.clear();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBean);					
+		}
+
+	}
+	
+	@Operation(summary = "Get Consumer Crib Data", description = "Get Consumer Crib Data from DB")
+	@PostMapping("/getConsumerCribData/{requestDetailId}")
+	public ResponseEntity<ConsumerDataResponse> getConsumerCribData(@PathVariable(name = "requestDetailId") Long requestDetailId) {
+		
+		ConsumerDataResponse consumerDataResponse = new ConsumerDataResponse();
+		try {		
+			consumerDataResponse.setStatus(Status.SUCCESS.getStatus());
+			consumerDataResponse.setStatusCode(Status.SUCCESS.getStatusCode());
+			consumerDataResponse.set
+			
+			return ResponseEntity.status(HttpStatus.OK).body(consumerDataResponse);
+			
+		}catch (Exception ex) {
+			consumerDataResponse.setStatus(Status.APPLICATION_ERROR.getStatus());
+			consumerDataResponse.setStatusCode(Status.APPLICATION_ERROR.getStatusCode());
+			consumerDataResponse.setMessage("Error occurred : "+ex.toString());
+			
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(consumerDataResponse);
+		}		
+	}
+	
+	// Convert XML string to XML document.
+	private static Document convertStringToXMLDocument(String xmlString) {
+		
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = null;
+        try{
+            builder = factory.newDocumentBuilder();
+            xmlString = sanitizeXmlChars(xmlString);
+            Document doc = builder.parse(new InputSource(new StringReader(xmlString)));
+            doc.getDocumentElement().normalize();
+            return doc;
+        }catch(Exception e){
+            e.printStackTrace();
+            log.info("Error convertStringToXMLDocument : Error occured while converting H2H consumer response String to XML document");
+            log.info("Error convertStringToXMLDocument : " +e.fillInStackTrace());
+        }
+        return null;
+    }
+	
+	// Clear XML (Remove invalid characters)
+	private static String sanitizeXmlChars(String xmlString) {
+		
+	    if (xmlString == null) {
+	    	return null;
+	    }else if(xmlString.equals("")) {
+	    	return "";
+	    }else {
+	    	Pattern xmlInvalidChars = Pattern.compile("[^\\u0009\\u000A\\u000D\\u0020-\\uD7FF\\uE000-\\uFFFD\\x{10000}-\\x{10FFFF}]");
+	    	return xmlInvalidChars.matcher(xmlString).replaceAll("").replaceAll("&(?!amp;)", "&amp;");
+	    }
+	}
+	
+	// Return response type
+	private String getResposeType(Document doc) {
+		
+		String responseType = null;			
+		String responseTypeCode = doc.getElementsByTagName("RESPONSE-TYPE").item(0).getAttributes().item(0).getTextContent();
+		System.out.println("ResponseTypeCode: "+responseTypeCode);
+
+		if(responseTypeCode.equals("1")){
+			responseType = "singleHit";
+		}else if(responseTypeCode.equals("2")){
+			responseType = "noHit";
+		}else if(responseTypeCode.equals("3")){
+			responseType = "multiHit";
+		}else{
+			responseType = "error";
+		}
+        
+        System.out.println("ResponseType: "+responseType);
+        log.info("ResponseType: "+responseType);
+		return responseType;
+	}
+
+}

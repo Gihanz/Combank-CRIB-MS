@@ -1,0 +1,28 @@
+1660984128659	Rename type 'CribOperationsApplication'
+1660984158549	Rename type 'CribOperationsApplicationTests'
+1660984227462	Delete element
+1660984236138	Delete element
+1660984247197	Delete elements
+1660984258002	Delete element
+1660984278489	Delete elements
+1660984297980	Delete element
+1660984315564	Delete element
+1660984324716	Delete elements
+1660985886117	Delete elements
+1660985962693	Delete elements
+1660986211480	Rename type 'CribApiInvokeRequest'
+1660986300289	Delete element
+1660991106231	Rename package 'com.nable.crib'
+1660991129611	Rename package 'com.nable.crib.config'
+1660991139560	Rename package 'com.nable.crib.controller'
+1660991152113	Rename package 'com.nable.crib.exception'
+1660991157146	Rename package 'com.nable.crib.model'
+1660991164501	Rename package 'com.nable.crib.model.audit'
+1660991171292	Rename package 'com.nable.crib.repository'
+1660991177218	Rename package 'com.nable.crib.request'
+1660991184036	Rename package 'com.nable.crib.response'
+1660991189369	Rename package 'com.nable.crib.security'
+1660991194058	Rename package 'com.nable.crib.service'
+1660991202603	Rename package 'com.nable.crib.util.encrypt'
+1660991207846	Rename package 'com.nable.crib.validation'
+1661023737794	Rename type 'CribController'

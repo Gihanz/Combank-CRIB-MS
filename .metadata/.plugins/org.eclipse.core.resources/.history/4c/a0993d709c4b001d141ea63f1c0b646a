@@ -1,0 +1,90 @@
+package com.nable.crib.pdf.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.nable.crib.pdf.response.PdfResponse;
+import com.nable.crib.pdf.response.Status;
+import com.nable.crib.pdf.service.ConsumerPdfGenService;
+import com.nable.crib.pdf.service.CorporatePdfGenService;
+import com.nable.crib.pdf.util.ErrorDescription;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+@RestController
+public class PdfGeneratorController {
+	
+	static Logger log = LoggerFactory.getLogger(PdfGeneratorController.class);
+		
+	@Autowired
+    private ConsumerPdfGenService consumerPdfGenService;
+	
+	@Autowired
+    private CorporatePdfGenService corporatePdfGenService;
+
+	@Operation(summary = "Test Working Status", description = "Test Working Status by Get")
+	@GetMapping("/test")
+	public String testService() {
+		return "Service working fine";
+	}
+	
+	@Operation(summary = "Get Consumer CRIB Report PDF", description = "Get Consumer CRIB Report PDF")
+	@ApiResponses(value = {
+	        @ApiResponse(responseCode = "200", description = "Successful Operation", content = @Content(schema = @Schema(implementation = PdfResponse.class))),
+	        @ApiResponse(responseCode = "400", description = ErrorDescription.INPUT_PARAMETERS_ARE_NOT_VALID),
+            @ApiResponse(responseCode = "500", description = ErrorDescription.INTERNAL_SERVER_ERROR)})
+	@GetMapping("/getConsumerPdf/{requestDetailId}")
+	public ResponseEntity<PdfResponse> getConsumerPdf(@PathVariable(name = "requestDetailId") Long requestDetailId, @RequestParam boolean scoreRequired) {
+		
+		PdfResponse consumerPdfResponse = new PdfResponse();
+		try {		
+			log.debug("getConsumerPdf for : ", requestDetailId);
+			consumerPdfResponse = consumerPdfGenService.get(requestDetailId, scoreRequired);
+			log.info(consumerPdfResponse.getMessage());
+			
+			return ResponseEntity.status(HttpStatus.OK).body(consumerPdfResponse);
+			
+		}catch (Exception ex) {
+			log.error("Error occurred : ", ex.toString());
+			consumerPdfResponse = new PdfResponse(Status.ERROR.getStatusCode(), Status.ERROR.getStatus(), "Error occurred : "+ex.toString());
+			
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(consumerPdfResponse);
+		}		
+	}
+	
+	@Operation(summary = "Get Corporate CRIB Report PDF", description = "Get Corporate CRIB Report PDF")
+	@ApiResponses(value = {
+	        @ApiResponse(responseCode = "200", description = "Successful Operation", content = @Content(schema = @Schema(implementation = PdfResponse.class))),
+	        @ApiResponse(responseCode = "400", description = ErrorDescription.INPUT_PARAMETERS_ARE_NOT_VALID),
+            @ApiResponse(responseCode = "500", description = ErrorDescription.INTERNAL_SERVER_ERROR)})
+	@GetMapping("/getCorporatePdf/{requestDetailId}")
+	public ResponseEntity<PdfResponse> getCorporatePdf(@PathVariable(name = "requestDetailId") Long requestDetailId, @RequestParam boolean scoreRequired) {
+		
+		PdfResponse corporatePdfResponse = new PdfResponse();
+		try {		
+			log.debug("getCorporatePdf for : ", requestDetailId);
+			corporatePdfResponse = corporatePdfGenService.get(requestDetailId, scoreRequired);
+			log.info(corporatePdfResponse.getMessage());
+			
+			return ResponseEntity.status(HttpStatus.OK).body(corporatePdfResponse);
+			
+		}catch (Exception ex) {
+			log.error("Error occurred : ", ex);
+			corporatePdfResponse = new PdfResponse(Status.ERROR.getStatusCode(), Status.ERROR.getStatus(), "Error occurred : "+ex.toString());
+			
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(corporatePdfResponse);
+		}
+	}
+	
+}

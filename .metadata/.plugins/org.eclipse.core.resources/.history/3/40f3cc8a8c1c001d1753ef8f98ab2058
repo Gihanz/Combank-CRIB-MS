@@ -1,0 +1,370 @@
+package com.nable.crib.controller;
+
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+
+import com.nable.crib.cribApi.ConRspOperations;
+import com.nable.crib.model.consumer.ConDemographicDetails;
+import com.nable.crib.model.consumer.ConMailingAddresses;
+import com.nable.crib.request.CribApiInvokeRequest;
+import com.nable.crib.request.MultiHitRequestBean;
+import com.nable.crib.request.MultiHitRequestXmlGenerator;
+import com.nable.crib.request.PerHitCost;
+import com.nable.crib.request.SingleHitRequestBean;
+import com.nable.crib.request.SingleHitRequestXmlGenerator;
+import com.nable.crib.response.ResponseBean;
+import com.nable.crib.response.Status;
+import com.nable.crib.service.ConsumerService;
+import com.nable.crib.util.encrypt.CribEncryption;
+import com.nable.crib.util.soap.LiveRequestInvoker;
+import com.nable.crib.util.soap.LiveRequestInvokerSoap;
+
+@RestController
+public class CribController {
+	
+	static Logger log = LoggerFactory.getLogger(CribController.class);
+	
+	@Value("${crib.wsdl.url}")
+	private URL wsdl;
+	@Value("${crib.apiUsername}")
+	private String apiUsername;
+	@Value("${crib.apiPassword}")
+	private String apiPassword;
+	@Value("${crib.encryptionKey}")
+	private String encryptionKey;
+	@Value("${crib.decryptionKey}")
+	private String decryptionKey;
+	
+	@Autowired
+    private ConsumerService consumerService;
+	
+	@Autowired
+	ConRspOperations conRsOp;
+
+	@RequestMapping(value = "/test", method = RequestMethod.GET)
+	public String testService() {
+		return "Service working fine";
+	}
+	
+	@PostMapping("/cribApiInvoke")
+	public List<ResponseBean> cribApiInvoke(@RequestBody CribApiInvokeRequest requestObj) {
+
+		String requestXml = null;
+		String responseType = null;
+		String bureauRequestId = null;
+		String subjectType = null;
+		PerHitCost perHitCost = null;		
+		List<ResponseBean> responseBeanList = new ArrayList<ResponseBean>();
+		
+		try {
+			ResponseBean responseBean = new ResponseBean();
+			
+			if(requestObj.getRequestType().equalsIgnoreCase("M")) {
+				MultiHitRequestBean multiHitRequestObj = requestObj.getMultiHitRequestBean();
+				MultiHitRequestXmlGenerator reqXmlGen = new MultiHitRequestXmlGenerator();
+				requestXml = reqXmlGen.generateReqXml(multiHitRequestObj);
+				
+				subjectType = requestObj.getMultiHitRequestBean().getSubjectType();
+				perHitCost = requestObj.getMultiHitRequestBean().getPerHitCost();
+			}else {
+				SingleHitRequestBean singleHitRequestObj = requestObj.getSingleHitRequestBean();	
+				SingleHitRequestXmlGenerator reqXmlGen = new SingleHitRequestXmlGenerator();
+				requestXml = reqXmlGen.generateReqXml(singleHitRequestObj);	
+				
+				subjectType = requestObj.getSingleHitRequestBean().getSubjectType();
+				perHitCost = requestObj.getSingleHitRequestBean().getPerHitCost();
+			}
+			Long requestDetailId = requestObj.getRequestDetailId();
+			String username = requestObj.getUsername();
+			log.info("RequestDetailId : "+requestDetailId+ " ------ by : "+username);
+			log.info("RequestXml : "+requestXml);
+			
+			LiveRequestInvoker client = new LiveRequestInvoker(wsdl);
+			LiveRequestInvokerSoap soapClient = client.getLiveRequestInvokerSoap();
+			
+			CribEncryption cribEncryptor = new CribEncryption();
+			String sRequestXml = cribEncryptor.encryptorSHA(requestXml, encryptionKey);
+			String sUserName = cribEncryptor.encryptorSHA(apiUsername, encryptionKey);
+			String sPassword = cribEncryptor.encryptorSHA(apiPassword, encryptionKey);
+	    
+			// Sending SOAP Request to CRIB API.
+			log.info("Sending SOAP request to H2H CRIB API...");
+			String sResponseXml = soapClient.postRequest(sRequestXml,sUserName,sPassword);
+			log.info("Response received from H2H CRIB API.");
+			//log.info("Encrypted ResponseXml : "+sResponseXml);
+			
+			String responseXml = cribEncryptor.decryptorSHA(sResponseXml, decryptionKey);
+			
+			// ============== If Consumer ==============//		
+			if(subjectType.equals("1")) {
+				
+				Document doc = convertStringToXMLDocument(responseXml);
+							
+				responseType = getResposeType(doc);
+				if(responseType.equals("singleHit")) {
+					
+					try {
+						ConDemographicDetails conDemographicDetails = conRsOp.insrtDemographicDetails(doc, requestDetailId, username);
+						List<ConMailingAddresses> conMailingAddressesList = conRsOp.insrtMailingAddresses(doc, requestDetailId, username);
+						consumerService.save(conDemographicDetails, conMailingAddressesList);			
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getHit());
+					responseBean.setStatusCode(Status.SINGLE_HIT.getStatusCode());
+					responseBean.setStatus(Status.SINGLE_HIT.getStatus());
+					responseBean.setSearchResults(conRsOp.getSearchResults(doc));
+					responseBeanList.add(responseBean);
+					
+				}else if(responseType.equals("multiHit")) {
+	
+					bureauRequestId = doc.getDocumentElement().getAttribute("REFERENCE-NO");
+	//				conRsOp.insrtSearchResults(doc, requestDetailId, username, conn);						
+	//				updateRequestDetailsPstmt(requestDetailId, bureauRequestId, "0", "1", Status.MULTI_HIT, "-", "-", requestObj.getPerHitCost().getMultiHit(), conn);
+	//				conn.commit();
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getMultiHit());
+					responseBean.setStatusCode(Status.MULTI_HIT.getStatusCode());
+					responseBean.setStatus(Status.MULTI_HIT.getStatus());
+					responseBean.setMultiHit(conRsOp.getMultiHitResponse(doc));
+					responseBeanList.add(responseBean);
+					
+				}else if(responseType.equals("noHit")) {
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");
+	//				updateRequestDetailsPstmt(requestDetailId, bureauRequestId, "0", "0", Status.NO_HIT, "-", "-", requestObj.getPerHitCost().getNoHit(), conn);
+	//				conn.commit();
+					
+					// Setting ResponseBean
+					responseBean.setPerHitCost(perHitCost.getNoHit());
+					responseBean.setStatusCode(Status.NO_HIT.getStatusCode());
+					responseBean.setStatus(Status.NO_HIT.getStatus());
+					responseBeanList.add(responseBean);
+				}else {	
+					bureauRequestId = doc.getDocumentElement().getAttribute("REQUEST-ID");
+					String errorCode = (doc.getElementsByTagName("ERROR-CODE").getLength() > 0) ? doc.getElementsByTagName("ERROR-CODE").item(0).getTextContent() : "-";
+					String error = (doc.getElementsByTagName("ERROR").getLength() > 0) ? doc.getElementsByTagName("ERROR").item(0).getTextContent() : "-";
+					
+	//				conRsOp.insrtRequestErrors(doc, requestDetailId, username, conn);
+	//				updateRequestDetailsPstmt(requestDetailId, bureauRequestId, "0", "0", Status.ERROR_HIT, errorCode, error, "0", conn);
+	//				conn.commit();
+					
+					// Setting ResponseBean
+					responseBean.setErrorCode(errorCode);
+					responseBean.setError(error);
+					responseBean.setStatusCode(Status.ERROR_HIT.getStatusCode());
+					responseBean.setStatus(Status.ERROR_HIT.getStatus());
+					responseBeanList.add(responseBean);
+				}	
+			}
+			log.info("#--------------------------------- Request : "+requestDetailId+" completed ---------------------------------#");
+			
+		} catch(Exception e) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			
+			e.printStackTrace();
+			log.info("Exception occured : " +sw.toString());
+			
+			String perHitCost = "0";
+			Status status = Status.API_ERROR;	
+			
+			if(conn!=null) {
+				if(savePoint!=null){
+					try {
+						System.out.println("Preparing roll back...");
+						log.info("Preparing roll back...");	
+						conn.rollback(savePoint);
+						log.info("Roll back completed.");	
+					} catch (SQLException e1) {
+						e.printStackTrace();
+						System.out.println("Rolling back failed : " +e.fillInStackTrace());
+						log.info("Rolling back failed : " +e.fillInStackTrace());				
+					}			
+				}
+				
+				String isHit = "0";
+				String isCribAvailable = "0";
+								
+				if(responseType != null) {
+					if(responseType.equals("singleHit")) {
+						isHit = "1";	
+						//isCribAvailable = "1";
+						perHitCost = requestObj.getPerHitCost().getHit();
+					}else if(responseType.equals("multiHit")) {
+						isHit = "1";	
+						perHitCost = requestObj.getPerHitCost().getMultiHit();
+					}else if(responseType.equals("noHit")) {
+						isHit = "1";	
+						perHitCost = requestObj.getPerHitCost().getNoHit();
+					}
+					
+					status = Status.APPLICATION_ERROR;						
+				}
+				insertException(requestDetailId, bureauRequestId, isCribAvailable, isHit, status, status.getStatusCode(), e.fillInStackTrace().toString(), perHitCost, conn);				
+			}
+			
+			ResponseBean responseBean = new ResponseBean();
+			responseBean.setPerHitCost(perHitCost);
+			responseBean.setStatusCode(status.getStatusCode());
+			responseBean.setStatus(status.getStatus());
+			responseBean.setErrorCode(status.getStatusCode());
+			responseBean.setError("Exception occured : " +e.fillInStackTrace());
+			responseBeanList.add(responseBean);		
+					
+		}
+		return responseBeanList;
+	}
+	
+	// Convert XML string to XML document.
+	private static Document convertStringToXMLDocument(String xmlString) {
+		
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = null;
+        try{
+            builder = factory.newDocumentBuilder();
+            xmlString = sanitizeXmlChars(xmlString);
+            Document doc = builder.parse(new InputSource(new StringReader(xmlString)));
+            doc.getDocumentElement().normalize();
+            return doc;
+        }catch(Exception e){
+            e.printStackTrace();
+            log.info("Error convertStringToXMLDocument : Error occured while converting H2H response String to XML document");
+            log.info("Error convertStringToXMLDocument : " +e.fillInStackTrace());
+        }
+        return null;
+    }
+	
+	// Clear XML (Remove invalid characters)
+	private static String sanitizeXmlChars(String xmlString) {
+		
+	    if (xmlString == null) {
+	    	return null;
+	    }else if(xmlString.equals("")) {
+	    	return "";
+	    }else {
+	    	Pattern xmlInvalidChars = Pattern.compile("[^\\u0009\\u000A\\u000D\\u0020-\\uD7FF\\uE000-\\uFFFD\\x{10000}-\\x{10FFFF}]");
+	    	return xmlInvalidChars.matcher(xmlString).replaceAll("").replaceAll("&(?!amp;)", "&amp;");
+	    }
+	}
+	
+	// Return response type
+	private String getResposeType(Document doc) {
+		
+		String responseType = null;			
+		String responseTypeCode = doc.getElementsByTagName("RESPONSE-TYPE").item(0).getAttributes().item(0).getTextContent();
+		System.out.println("ResponseTypeCode: "+responseTypeCode);
+
+		if(responseTypeCode.equals("1")){
+			responseType = "singleHit";
+		}else if(responseTypeCode.equals("2")){
+			responseType = "noHit";
+		}else if(responseTypeCode.equals("3")){
+			responseType = "multiHit";
+		}else{
+			responseType = "error";
+		}
+        
+        System.out.println("ResponseType: "+responseType);
+        log.info("ResponseType: "+responseType);
+		return responseType;
+	}
+	
+	//================ Updating Request Details ================//
+	private void updateRequestDetailsPstmt(int requestDetailId, String bureauReferenceNo, String isCribAvailable, String isHit, Status status, String errorCode, String error, String perHitCost, Connection conn) throws SQLException {
+  		
+		String compiledQuery = "UPDATE CRIB_REQUEST_DETAIL SET BUREAU_REFERENCE_NO=?, IS_CRIB_AVAILABLE=?, IS_HIT=?, STATUS_CODE=?, STATUS_DESCRIPTION=?, STATUS=?, ERROR_CODE=?, ERROR=?, SOURCE_NAME=?, REPORT_PATH=?, PER_HIT_COST=?, REPORT_ID=?, IS_ACTIVE=?, MODIFIED=?, MODIFIED_BY=? WHERE ID=?";
+		PreparedStatement pstmt = conn.prepareStatement(compiledQuery);
+			
+		pstmt.setString(1, bureauReferenceNo);
+		pstmt.setString(2, isCribAvailable);
+		pstmt.setString(3, isHit);
+		pstmt.setString(4, status.getStatusCode());
+		pstmt.setString(5, status.getStatus());
+		pstmt.setString(6, "CRIB_COMPLETED");
+		pstmt.setString(7, errorCode);
+		pstmt.setString(8, error);
+		pstmt.setString(9, "API");
+		pstmt.setString(10, "N/A");
+	    pstmt.setString(11, perHitCost);	
+	    pstmt.setInt(12, requestDetailId);
+	    pstmt.setInt(13, 1);
+	    pstmt.setTimestamp(14, new Timestamp(System.currentTimeMillis()));
+	    pstmt.setString(15, "API");
+	    pstmt.setInt(16, requestDetailId);
+		    
+	    pstmt.execute();
+		pstmt.close();
+	}
+	
+	//================ Insert Exception to DB ================//
+	private void insertException(int requestDetailId, String bureauReferenceNo, String isCribAvailable, String isHit, Status status, String errorCode, String error, String perHitCost, Connection conn) {
+	  		
+		String compiledQuery = "UPDATE CRIB_REQUEST_DETAIL SET BUREAU_REFERENCE_NO=?, IS_CRIB_AVAILABLE=?, IS_HIT=?, STATUS_CODE=?, STATUS_DESCRIPTION=?, STATUS=?, ERROR_CODE=?, ERROR=?, SOURCE_NAME=?, REPORT_PATH=?, PER_HIT_COST=?, IS_ACTIVE=?, MODIFIED=?, MODIFIED_BY=? WHERE ID=?";
+
+		try{
+			System.out.println("Error added");
+			
+			PreparedStatement pstmt = conn.prepareStatement(compiledQuery);
+				
+			pstmt.setString(1, bureauReferenceNo);
+			pstmt.setString(2, isCribAvailable);
+			pstmt.setString(3, isHit);
+			pstmt.setString(4, status.getStatusCode());
+			pstmt.setString(5, status.getStatus());
+			pstmt.setString(6, "CRIB_COMPLETED");
+			pstmt.setString(7, errorCode);
+			pstmt.setString(8, error);
+			pstmt.setString(9, "API");
+			pstmt.setString(10, "N/A");
+		    pstmt.setString(11, perHitCost);	
+		    pstmt.setInt(12, 1);
+		    pstmt.setTimestamp(13, new Timestamp(System.currentTimeMillis()));
+		    pstmt.setString(14, "API");
+		    pstmt.setInt(15, requestDetailId);
+				    
+		    pstmt.execute();
+		    conn.commit();
+			pstmt.close();
+			
+		}catch(SQLException se){
+			se.printStackTrace();
+			log.info("Error : " +se.fillInStackTrace());
+		}
+	}
+}

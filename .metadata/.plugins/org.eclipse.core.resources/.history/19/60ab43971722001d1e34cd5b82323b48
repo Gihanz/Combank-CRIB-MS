@@ -1,0 +1,18 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 15, 2022 - 7:51:24 PM
+ *  ***************************************
+ */
+
+package com.nable.crib.cons.repository;
+
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import com.nable.crib.cons.model.ConCatalogueDescription;
+
+@Repository("ConCatalogueDescriptionRepository")
+public interface ConCatalogueDescriptionRepository extends CrudRepository<ConCatalogueDescription, Long> {
+
+}

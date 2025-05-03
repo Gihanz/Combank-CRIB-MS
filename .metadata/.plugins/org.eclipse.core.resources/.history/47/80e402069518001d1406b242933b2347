@@ -1,0 +1,35 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 10, 2022 - 11:51:24 AM
+ *  ***************************************
+ */
+
+package com.nable.crib.model;
+
+import lombok.Data;
+
+import javax.persistence.*;
+
+import com.nable.crib.model.audit.Auditable;
+
+
+@Data
+@Entity
+@Table(name = "CRIB_CATALOGUES")
+public class Catalogues extends Auditable {
+	
+	@Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "ID")
+    private Long id;
+	@Column(name = "TYPE", length = 5)
+    private String type;	
+	@Column(name = "NAME", length = 100)
+    private String name;
+	@Column(name = "VALUE", length = 100)
+    private String value;
+	@Column(name = "DESCRIPTION", length = 255)
+    private String description;
+	
+}

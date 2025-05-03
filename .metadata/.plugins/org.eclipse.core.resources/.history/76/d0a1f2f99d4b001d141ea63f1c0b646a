@@ -1,0 +1,594 @@
+package com.nable.crib.pdf.util;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.nable.crib.pdf.bean.crib.CFForLast24Months;
+import com.nable.crib.pdf.bean.crib.CFOfGlanceStatus;
+import com.nable.crib.pdf.bean.crib.CatalogueDescription;
+import com.nable.crib.pdf.bean.crib.ConsumerCribObject;
+import com.nable.crib.pdf.bean.crib.CreditFacilityDetails;
+import com.nable.crib.pdf.bean.crib.DemographicDetails;
+import com.nable.crib.pdf.bean.crib.DishonChequeDetails;
+import com.nable.crib.pdf.bean.crib.DishonChequeSummary;
+import com.nable.crib.pdf.bean.crib.DisputeDetails;
+import com.nable.crib.pdf.bean.crib.EmploymentDetails;
+import com.nable.crib.pdf.bean.crib.InquiriesBySubject;
+import com.nable.crib.pdf.bean.crib.Last24Months;
+import com.nable.crib.pdf.bean.crib.Last5Years;
+import com.nable.crib.pdf.bean.crib.LendingInstInquiries;
+import com.nable.crib.pdf.bean.crib.MailingAddresses;
+import com.nable.crib.pdf.bean.crib.PermanentAddresses;
+import com.nable.crib.pdf.bean.crib.PotAndCurrLiabilities;
+import com.nable.crib.pdf.bean.crib.RelationshipDetails;
+import com.nable.crib.pdf.bean.crib.ReportedNames;
+import com.nable.crib.pdf.bean.crib.RequestDetail;
+import com.nable.crib.pdf.bean.crib.RequestMain;
+import com.nable.crib.pdf.bean.crib.RequestMaster;
+import com.nable.crib.pdf.bean.crib.SettledCFDetails;
+import com.nable.crib.pdf.bean.crib.SettledCFSummary;
+
+@Component
+public class GetConsumerCribData {
+	
+	static Logger log = LoggerFactory.getLogger(GetConsumerCribData.class);
+	
+	@Autowired
+	ConsumerMicroservice consumerMS;
+	
+	@Autowired
+	CommonUtilsMicroservice comnUtilsMS;
+	
+	RequestMain requestMain;
+	RequestMaster requestMaster;
+	RequestDetail requestDetail;
+	DemographicDetails demographicDetails;
+	List<MailingAddresses> mailingAddressesList;
+	List<PermanentAddresses> permanentAddressesList;
+	List<ReportedNames> reportedNamesList;
+	List<EmploymentDetails> employmentDetailsList;
+	List<RelationshipDetails> relationshipDetailsList;
+	List<SettledCFDetails> settledCFDetailsList;
+	List<SettledCFSummary> settledCFSummaryList;
+	List<LendingInstInquiries> lendingInstInquiriesList;
+	List<InquiriesBySubject> inquiriesBySubjectList;
+	List<CreditFacilityDetails> creditFacilityDetailsList;
+	List<CFForLast24Months> cFForLast24MonthsList;
+	List<DisputeDetails> disputeDetailsList;
+	List<PotAndCurrLiabilities> potAndCurrLiabilitiesList;
+	List<CFOfGlanceStatus> cFOfGlanceStatusList;
+	List<DishonChequeSummary> dishonChequeSummaryList;
+	List<DishonChequeDetails> dishonChequeDetailsList;
+	List<CatalogueDescription> catalogueDescriptionList;
+	Last24Months last24Months;
+	Last5Years last5Years;
+
+	// Get consumer data
+	public ConsumerCribObject getConsumerCribDataByDetailId(Long requestDetailId) throws Exception {
+
+		ConsumerCribObject consumerObj = new ConsumerCribObject();
+		
+		JSONObject requestDetailData = comnUtilsMS.getRequestDetail(requestDetailId).getJSONObject("requestDetail");
+		JSONObject requestMasterData = comnUtilsMS.getRequestMaster(requestDetailData.getLong("requestMasterId")).getJSONObject("requestMaster");
+		JSONObject requestMainData = comnUtilsMS.getRequestMain(requestMasterData.getLong("requestMainId")).getJSONObject("requestMain");
+		
+		JSONObject consCribData = consumerMS.getConsumerCribData(requestDetailId);
+		JSONObject consDemographicDetailsData = consCribData.getJSONObject("consDemographicDetails");
+		JSONArray consMailingAddressesDataList = consCribData.getJSONArray("consMailingAddressesList");
+		JSONArray consPermanentAddressesDataList = consCribData.getJSONArray("consPermanentAddressesList");	
+		JSONArray consReportedNamesDataList = consCribData.getJSONArray("consReportedNamesList");
+		JSONArray consEmploymentDetailsDataList = consCribData.getJSONArray("consEmploymentDetailsList");
+		JSONArray consRelationshipDetailsDataList = consCribData.getJSONArray("consRelationshipDetailsList");
+		JSONArray consSettledCreditFacilitiesDetailsDataList = consCribData.getJSONArray("consSettledCreditFacilitiesDetailsList");
+		JSONArray consSettledCreditFacilitiesSummaryDataList = consCribData.getJSONArray("consSettledCreditFacilitiesSummaryList");
+		JSONArray consLendingInstutionsInquiriesDataList = consCribData.getJSONArray("consLendingInstutionsInquiriesList");
+		JSONArray consInquiriesBySubjectDataList = consCribData.getJSONArray("consInquiriesBySubjectList");
+		JSONArray consCreditFacilityDetailsDataList = consCribData.getJSONArray("consCreditFacilityDetailsList");
+		JSONArray consCreditFacilityDetailsLast24MonthsDataList = consCribData.getJSONArray("consCreditFacilityDetailsLast24MonthsList");
+		JSONArray consDisputeDetailsDataList = consCribData.getJSONArray("consDisputeDetailsList");
+		JSONArray consPotentialAndCurrentLiabilitiesDataList = consCribData.getJSONArray("consPotentialAndCurrentLiabilitiesList");
+		JSONArray consCreditFacilityOfGlanceStatusDataList = consCribData.getJSONArray("consCreditFacilityOfGlanceStatusList");
+		JSONArray consDishonouredChequeSummaryDataList = consCribData.getJSONArray("consDishonouredChequeSummaryList");
+		JSONArray consDishonouredChequeDetailsDataList = consCribData.getJSONArray("consDishonouredChequeDetailsList");
+		JSONArray consCatalogueDescriptionDataList = consCribData.getJSONArray("consCatalogueDescriptionList");
+		
+		if(requestDetailData != null) {
+			requestDetail = new RequestDetail();
+			requestDetail.setReportNumber(formatValue(requestDetailData.get("reportId"), "NUMBER"));
+			requestDetail.setReportOrderDate(formatValue(requestDetailData.get("created"), "DATE"));
+			consumerObj.setRequestDetail(requestDetail);
+		}
+		
+		if(requestMasterData != null) {
+			requestMaster = new RequestMaster();
+			requestMaster.setProductName(requestMasterData.get("productType") != null ? requestMasterData.getString("productType") : "-");
+			
+			Map<String, String> reasonsMap = new HashMap<String, String>() {{
+		        put("59", "Evaluating of a borrower for a new credit facility");
+		        put("60", "Review as a Guarantor for a new credit facility");
+		        put("61", "Review as a partner/proprietor for a new credit facility");
+		        put("62", "Review as a director for a new credit facility");
+		        put("63", "Opening of a Current Account");
+		        put("64", "Monitoring and reviewing of an existing borrower");
+		        put("999", "-");
+		    }};
+		    
+		    requestMaster.setReason(reasonsMap.get(requestMasterData.get("reasonForReporting") != null ? requestMasterData.getString("reasonForReporting") : "999"));
+		    requestMaster.setName(requestMasterData.get("name") != null ? requestMasterData.getString("name") : "");
+		    requestMaster.setCustomerId(requestMasterData.get("customerId") != null ? requestMasterData.getString("customerId") : "");
+		    requestMaster.setGender(requestMasterData.get("gender") != null ? (requestMasterData.getString("gender").toString().equalsIgnoreCase("001") ? "Male" : "Female") : "");
+		    consumerObj.setRequestMaster(requestMaster);
+		}
+		
+		if(requestMainData != null) {
+			requestMain = new RequestMain();
+			requestMain.setRequestNumber(requestMainData.getString("requestNumber") != null ? requestMainData.getString("requestNumber") : "");
+			requestMain.setInitiatorName(requestMainData.getString("initiatorName") != null ? requestMainData.getString("initiatorName") : "");
+			consumerObj.setRequestMain(requestMain);
+		}
+		
+		if(consDemographicDetailsData != null) {
+			demographicDetails = new DemographicDetails();
+			demographicDetails.setName(consDemographicDetailsData.getString("name") != null ? consDemographicDetailsData.getString("name") : "");
+			demographicDetails.setNicNumber(consDemographicDetailsData.getString("nicNumber") != null ? consDemographicDetailsData.getString("nicNumber") : "");
+			demographicDetails.setPassportNumber(consDemographicDetailsData.getString("passportNumber") != null ? consDemographicDetailsData.getString("passportNumber") : "");
+			demographicDetails.setDob(formatValue(consDemographicDetailsData.get("dob"), "DATE"));
+			demographicDetails.setGender(consDemographicDetailsData.getString("gender") != null ? (consDemographicDetailsData.getString("gender").equalsIgnoreCase("001") ? "Male" : "Female") : "");
+			demographicDetails.setCitizenship(consDemographicDetailsData.getString("citizenship") != null ? (consDemographicDetailsData.getString("citizenship").equalsIgnoreCase("001") ? "Sri Lankan Citizen" : "Non Sri Lankan Citizen") : "");
+			demographicDetails.setMaritalStatus(consDemographicDetailsData.getString("maritalStatus") != null ? consDemographicDetailsData.getString("maritalStatus") : "");
+			demographicDetails.setSpouseName(consDemographicDetailsData.getString("spouseName") != null ? consDemographicDetailsData.getString("spouseName") : "");
+			demographicDetails.setTelephoneNumber(consDemographicDetailsData.getString("telephoneNumber") != null ? consDemographicDetailsData.getString("telephoneNumber") : "");
+			demographicDetails.setMobileNumber(consDemographicDetailsData.getString("mobileNumber") != null ? consDemographicDetailsData.getString("mobileNumber") : "");
+			consumerObj.setDemographicDetails(demographicDetails);
+		}
+		
+		if(consMailingAddressesDataList != null) {
+			mailingAddressesList = new ArrayList<MailingAddresses>();
+			for(int x=0; x<consMailingAddressesDataList.length(); x++) {
+				MailingAddresses mailingAddress = new MailingAddresses();
+				JSONObject consMailingAddressesData = consMailingAddressesDataList.getJSONObject(x);
+				mailingAddress.setMNo(formatValue(consMailingAddressesData.get("sno"), "NUMBER"));
+				mailingAddress.setAddress(consMailingAddressesData.getString("address") != null ? consMailingAddressesData.getString("address") : "");
+				mailingAddress.setReportedDate(formatValue(consMailingAddressesData.get("reportedDate"), "DATE"));
+				mailingAddressesList.add(mailingAddress);	
+			}
+			consumerObj.setMailingAddresses(mailingAddressesList);
+		}
+		
+		if(consPermanentAddressesDataList != null) {
+			permanentAddressesList = new ArrayList<PermanentAddresses>();
+			for(int x=0; x<consPermanentAddressesDataList.length(); x++) {
+				PermanentAddresses permanentAddresses = new PermanentAddresses();
+				JSONObject consPermanentAddressesData = consPermanentAddressesDataList.getJSONObject(x);
+				permanentAddresses.setPNo(formatValue(consPermanentAddressesData.get("sno"), "NUMBER"));
+				permanentAddresses.setAddress(consPermanentAddressesData.getString("address") != null ? consPermanentAddressesData.getString("address") : "");
+				permanentAddresses.setReportedDate(formatValue(consPermanentAddressesData.get("reportedDate"), "DATE"));
+				permanentAddressesList.add(permanentAddresses);	
+			}
+			consumerObj.setPermanentAddresses(permanentAddressesList);
+		}
+		
+		if(consReportedNamesDataList != null) {
+			reportedNamesList = new ArrayList<ReportedNames>();
+			for(int x=0; x<consReportedNamesDataList.length(); x++) {
+				ReportedNames reportedNames = new ReportedNames();
+				JSONObject consReportedNamesData = consReportedNamesDataList.getJSONObject(x);
+				reportedNames.setSNo(formatValue(consReportedNamesData.get("sno"), "NUMBER"));
+				reportedNames.setReportedInstitution(consReportedNamesData.getString("reportedInstitution") != null ? consReportedNamesData.getString("reportedInstitution") : "");
+				reportedNames.setName(consReportedNamesData.getString("name") != null ? consReportedNamesData.getString("name") : "");
+				reportedNames.setReportedDate(formatValue(consReportedNamesData.get("reportedDate"), "DATE"));
+				reportedNamesList.add(reportedNames);	
+			}
+			consumerObj.setReportedNames(reportedNamesList);
+		}
+		
+		if(consEmploymentDetailsDataList != null) {
+			employmentDetailsList = new ArrayList<EmploymentDetails>();
+			for(int x=0; x<consEmploymentDetailsDataList.length(); x++) {
+				EmploymentDetails employmentDetail = new EmploymentDetails();
+				JSONObject consEmploymentDetailsData = consEmploymentDetailsDataList.getJSONObject(x);
+				employmentDetail.setEmployment(consEmploymentDetailsData.getString("employment") != null ? consEmploymentDetailsData.getString("employment") : "");
+				employmentDetail.setProfession(consEmploymentDetailsData.getString("profession") != null ? consEmploymentDetailsData.getString("profession") : "");
+				employmentDetail.setEmployerName(consEmploymentDetailsData.getString("employerName") != null ? consEmploymentDetailsData.getString("employerName") : "");
+				employmentDetail.setBusinessName(consEmploymentDetailsData.getString("businessName") != null ? consEmploymentDetailsData.getString("businessName") : "");
+				employmentDetail.setBrNumber(consEmploymentDetailsData.getString("brNumber") != null ? consEmploymentDetailsData.getString("brNumber") : "");
+				employmentDetail.setReportedDate(formatValue(consEmploymentDetailsData.get("reportedDate"), "DATE"));
+				employmentDetailsList.add(employmentDetail);	
+			}
+			consumerObj.setEmploymentDetails(employmentDetailsList);
+		}
+		
+		if(consRelationshipDetailsDataList != null) {
+			relationshipDetailsList = new ArrayList<RelationshipDetails>();
+			for(int x=0; x<consRelationshipDetailsDataList.length(); x++) {
+				RelationshipDetails relationshipDetail = new RelationshipDetails();
+				JSONObject consRelationshipDetailsData = consRelationshipDetailsDataList.getJSONObject(x);
+				relationshipDetail.setRNo(formatValue(consRelationshipDetailsData.get("sno"), "NUMBER"));
+				relationshipDetail.setEntityId(consRelationshipDetailsData.getString("entityId") != null ? consRelationshipDetailsData.getString("entityId") : "");
+				relationshipDetail.setEntityName(consRelationshipDetailsData.getString("entityName") != null ? consRelationshipDetailsData.getString("entityName") : "");
+				relationshipDetail.setNatureOfRelationship(consRelationshipDetailsData.getString("natureOfRelationship") != null ? consRelationshipDetailsData.getString("natureOfRelationship") : "");
+				relationshipDetailsList.add(relationshipDetail);	
+			}
+			consumerObj.setRelationshipDetails(relationshipDetailsList);
+		}
+		
+		if(consSettledCreditFacilitiesDetailsDataList != null) {
+			settledCFDetailsList = new ArrayList<SettledCFDetails>();
+			for(int x=0; x<consSettledCreditFacilitiesDetailsDataList.length(); x++) {
+				SettledCFDetails settledCFDetail = new SettledCFDetails();
+				JSONObject consSettledCreditFacilitiesDetailsData = consSettledCreditFacilitiesDetailsDataList.getJSONObject(x);
+				settledCFDetail.setCurrency(consSettledCreditFacilitiesDetailsData.getString("currency") != null ? consSettledCreditFacilitiesDetailsData.getString("currency") : "");
+				settledCFDetail.setCfType(consSettledCreditFacilitiesDetailsData.getString("cfType") != null ? consSettledCreditFacilitiesDetailsData.getString("cfType") : "");
+				settledCFDetail.setNoOfCreditFacilitiesAsBorrower(formatValue(consSettledCreditFacilitiesDetailsData.get("noOfCreditFacilitiesAsBorrower"), "NUMBER"));
+				settledCFDetail.setAmountGrantedAsBorrower(formatValue(consSettledCreditFacilitiesDetailsData.get("amountGrantedAsBorrower"), "AMOUNT"));
+				settledCFDetail.setNoOfCreditFacilitiesAsGuarantor(formatValue(consSettledCreditFacilitiesDetailsData.get("noOfCreditFacilitiesAsGuarantor"), "NUMBER"));
+				settledCFDetail.setAmountGrantedAsGuarantor(formatValue(consSettledCreditFacilitiesDetailsData.get("amountGrantedAsGuarantor"), "AMOUNT"));
+				settledCFDetailsList.add(settledCFDetail);	
+			}
+			consumerObj.setSettledCFDetails(settledCFDetailsList);
+		}
+		
+		if(consLendingInstutionsInquiriesDataList != null) {
+			lendingInstInquiriesList = new ArrayList<LendingInstInquiries>();
+			for(int x=0; x<consLendingInstutionsInquiriesDataList.length(); x++) {
+				LendingInstInquiries lendingInstInquiry = new LendingInstInquiries();
+				JSONObject consLendingInstutionsInquiriesData = consLendingInstutionsInquiriesDataList.getJSONObject(x);
+				lendingInstInquiry.setINo(formatValue(consLendingInstutionsInquiriesData.get("sno"), "NUMBER"));
+				lendingInstInquiry.setInquiryDate(formatValue(consLendingInstutionsInquiriesData.get("inquiryDate"), "DATE"));
+				lendingInstInquiry.setInstitutionName(consLendingInstutionsInquiriesData.getString("institutionName") != null ? consLendingInstutionsInquiriesData.getString("institutionName") : "");
+				lendingInstInquiry.setBranchName(consLendingInstutionsInquiriesData.getString("instituionCategory") != null ? consLendingInstutionsInquiriesData.getString("instituionCategory") : "");
+				lendingInstInquiry.setReason(consLendingInstutionsInquiriesData.getString("reason") != null ? consLendingInstutionsInquiriesData.getString("reason") : "");
+				lendingInstInquiry.setCfType(consLendingInstutionsInquiriesData.getString("cfType") != null ? consLendingInstutionsInquiriesData.getString("cfType") : "");
+				lendingInstInquiry.setCurrency(consLendingInstutionsInquiriesData.getString("currency") != null ? consLendingInstutionsInquiriesData.getString("currency") : "");
+				lendingInstInquiry.setAmount(formatValue(consLendingInstutionsInquiriesData.get("amount"), "AMOUNT"));
+				lendingInstInquiriesList.add(lendingInstInquiry);	
+			}
+			consumerObj.setLendingInstInquiries(lendingInstInquiriesList);
+		}
+		
+		if(consInquiriesBySubjectDataList != null) {
+			inquiriesBySubjectList = new ArrayList<InquiriesBySubject>();
+			for(int x=0; x<consInquiriesBySubjectDataList.length(); x++) {
+				InquiriesBySubject inquiriesBySubject = new InquiriesBySubject();
+				JSONObject consInquiriesBySubjectData = consInquiriesBySubjectDataList.getJSONObject(x);
+				inquiriesBySubject.setINo(formatValue(consInquiriesBySubjectData.get("sno"), "NUMBER"));
+				inquiriesBySubject.setInquiryDate(formatValue(consInquiriesBySubjectData.get("inquiryDate"), "DATE"));
+				inquiriesBySubject.setReason(consInquiriesBySubjectData.getString("reason") != null ? consInquiriesBySubjectData.getString("reason") : "");
+				inquiriesBySubjectList.add(inquiriesBySubject);	
+			}
+			consumerObj.setInquiriesBySubject(inquiriesBySubjectList);
+		}
+		
+		if(consCreditFacilityDetailsDataList != null) {
+			creditFacilityDetailsList = new ArrayList<CreditFacilityDetails>();
+			for(int x=0; x<consCreditFacilityDetailsDataList.length(); x++) {
+				CreditFacilityDetails creditFacilityDetail = new CreditFacilityDetails();
+				JSONObject consCreditFacilityDetailsData = consCreditFacilityDetailsDataList.getJSONObject(x);
+				creditFacilityDetail.setCNo(formatValue(consCreditFacilityDetailsData.get("sno"), "NUMBER"));
+				creditFacilityDetail.setInstitutionCatg(consCreditFacilityDetailsData.getString("institutionCategory") != null ? consCreditFacilityDetailsData.getString("institutionCategory") : "");
+				creditFacilityDetail.setInstitutionBranch(consCreditFacilityDetailsData.getString("institutionBranch") != null ? consCreditFacilityDetailsData.getString("institutionBranch") : "");				
+				creditFacilityDetail.setCfType(consCreditFacilityDetailsData.getString("cfType") != null ? consCreditFacilityDetailsData.getString("cfType") : "");
+				creditFacilityDetail.setCfStatus(consCreditFacilityDetailsData.getString("cfStatus") != null ? consCreditFacilityDetailsData.getString("cfStatus") : "");
+				creditFacilityDetail.setOwnership(consCreditFacilityDetailsData.getString("ownership") != null ? consCreditFacilityDetailsData.getString("ownership") : "");
+				creditFacilityDetail.setCurrency(consCreditFacilityDetailsData.getString("currency") != null ? consCreditFacilityDetailsData.getString("currency") : "");
+				creditFacilityDetail.setAmountGranted(formatValue(consCreditFacilityDetailsData.get("amountGranted"), "AMOUNT"));
+				creditFacilityDetail.setCurrentBalance(formatValue(consCreditFacilityDetailsData.get("currentBalance"), "AMOUNT"));
+				creditFacilityDetail.setArreasAmount(formatValue(consCreditFacilityDetailsData.get("arrearsAmount"), "AMOUNT"));
+				creditFacilityDetail.setInstallmentAmount(formatValue(consCreditFacilityDetailsData.get("installmentAmount"), "AMOUNT"));
+				creditFacilityDetail.setAmountWrittenOff(formatValue(consCreditFacilityDetailsData.get("amountWrittenOff"), "AMOUNT"));
+				creditFacilityDetail.setReportedDate(formatValue(consCreditFacilityDetailsData.get("reportedDate"), "DATE"));
+				creditFacilityDetail.setFirstDisburseDate(formatValue(consCreditFacilityDetailsData.get("firstDisburseDate"), "DATE"));
+				creditFacilityDetail.setLatestPaymentDate(formatValue(consCreditFacilityDetailsData.get("latestPaymentDate"), "DATE"));
+				creditFacilityDetail.setRestructuringDate(formatValue(consCreditFacilityDetailsData.get("restructuringDate"), "DATE"));
+				creditFacilityDetail.setEndDate(formatValue(consCreditFacilityDetailsData.get("endDate"), "DATE"));
+				creditFacilityDetail.setRepayType(consCreditFacilityDetailsData.getString("repayType") != null ? consCreditFacilityDetailsData.getString("repayType") : "");
+				creditFacilityDetail.setPurpose(consCreditFacilityDetailsData.getString("purpose") != null ? consCreditFacilityDetailsData.getString("purpose") : "");
+				creditFacilityDetail.setCoverage(consCreditFacilityDetailsData.getString("coverage") != null ? consCreditFacilityDetailsData.getString("coverage") : "");
+				creditFacilityDetailsList.add(creditFacilityDetail);	
+			}
+			consumerObj.setCreditFacilityDetails(creditFacilityDetailsList);
+		}
+		
+		if(consCreditFacilityDetailsLast24MonthsDataList != null) {
+			cFForLast24MonthsList = new ArrayList<CFForLast24Months>();
+			int i = 1;
+			JSONObject consCreditFacilityDetailsLast24MonthsData;
+			for(int x=0; x<consCreditFacilityDetailsLast24MonthsDataList.length(); x++) {
+				CFForLast24Months cFForLast24Months = new CFForLast24Months();				
+				cFForLast24Months.setCNo(String.valueOf(i));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(x);
+				cFForLast24Months.setMonth1(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth1_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth2(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth2_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth3(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth3_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth4(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth4_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth5(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth5_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth6(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth6_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth7(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth7_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth8(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth8_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth9(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth9_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth10(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth10_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth11(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth11_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth12(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth12_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth13(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth13_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth14(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth14_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth15(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth15_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth16(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth16_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth17(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth17_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth18(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth18_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth19(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth19_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth20(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth20_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth21(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth21_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth22(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth22_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth23(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth23_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(++x);
+				cFForLast24Months.setMonth24(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : "");
+				cFForLast24Months.setMonth24_Color(getCellColor(consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") != null ? consCreditFacilityDetailsLast24MonthsData.getString("maximumNumberOfDaysOverdue") : ""));
+				cFForLast24MonthsList.add(cFForLast24Months);
+				i++;
+			}
+			consumerObj.setCFForLast24Months(cFForLast24MonthsList);
+		}
+	
+		if(consCreditFacilityOfGlanceStatusDataList != null) {
+			cFOfGlanceStatusList = new ArrayList<CFOfGlanceStatus>();
+			for(int x=0; x<consCreditFacilityOfGlanceStatusDataList.length(); x++) {
+				CFOfGlanceStatus cFOfGlanceStatus = new CFOfGlanceStatus();
+				JSONObject consCreditFacilityOfGlanceStatusData = consCreditFacilityOfGlanceStatusDataList.getJSONObject(x);
+				cFOfGlanceStatus.setStatus(consCreditFacilityOfGlanceStatusData.getString("status") != null ? consCreditFacilityOfGlanceStatusData.getString("status") : "");				
+				cFOfGlanceStatus.setArrearsDays0(formatValue(consCreditFacilityOfGlanceStatusData.get("arrearsDays0"), "NUMBER"));
+				cFOfGlanceStatus.setArrearsDays1_30(formatValue(consCreditFacilityOfGlanceStatusData.get("arrearsDays1_30"), "NUMBER"));
+				cFOfGlanceStatus.setArrearsDays31_60(formatValue(consCreditFacilityOfGlanceStatusData.get("arrearsDays31_60"), "NUMBER"));
+				cFOfGlanceStatus.setArrearsDays61_90(formatValue(consCreditFacilityOfGlanceStatusData.get("arrearsDays61_90"), "NUMBER"));
+				cFOfGlanceStatus.setArrearsDaysOver90(formatValue(consCreditFacilityOfGlanceStatusData.get("arrearsDaysOver90"), "NUMBER"));
+				cFOfGlanceStatusList.add(cFOfGlanceStatus);	
+			}
+			consumerObj.setCFOfGlanceStatus(cFOfGlanceStatusList);
+		}
+
+		if(consDishonouredChequeDetailsDataList != null) {
+			dishonChequeDetailsList = new ArrayList<DishonChequeDetails>();
+			for(int x=0; x<consDishonouredChequeDetailsDataList.length(); x++) {
+				DishonChequeDetails dishonChequeDetail = new DishonChequeDetails();
+				JSONObject consDishonouredChequeDetailsData = consDishonouredChequeDetailsDataList.getJSONObject(x);
+				dishonChequeDetail.setInstitutionAndBranch(consDishonouredChequeDetailsData.getString("institutionAndBranch") != null ? consDishonouredChequeDetailsData.getString("institutionAndBranch") : "");
+				dishonChequeDetail.setChequeNumber(consDishonouredChequeDetailsData.getString("chequeNumber") != null ? consDishonouredChequeDetailsData.getString("chequeNumber") : "");
+				dishonChequeDetail.setChequeAmount(formatValue(consDishonouredChequeDetailsData.get("chequeAmount"), "AMOUNT"));
+				dishonChequeDetail.setDishonouredDate(formatValue(consDishonouredChequeDetailsData.get("dateDishonoured"), "DATE"));
+				dishonChequeDetail.setReason(consDishonouredChequeDetailsData.getString("reason") != null ? consDishonouredChequeDetailsData.getString("reason") : "");
+				dishonChequeDetailsList.add(dishonChequeDetail);	
+			}
+			consumerObj.setDishonChequeDetails(dishonChequeDetailsList);
+		}
+		
+		if(consDishonouredChequeSummaryDataList != null) {
+			dishonChequeSummaryList = new ArrayList<DishonChequeSummary>();
+			for(int x=0; x<consDishonouredChequeSummaryDataList.length(); x++) {
+				DishonChequeSummary dishonChequeSummary = new DishonChequeSummary();
+				JSONObject consDishonouredChequeSummaryData = consDishonouredChequeSummaryDataList.getJSONObject(x);
+				dishonChequeSummary.setNumberOfCheques(formatValue(consDishonouredChequeSummaryData.get("numberOfCheques"), "NUMBER"));
+				dishonChequeSummary.setChequeValue(formatValue(consDishonouredChequeSummaryData.get("chequeValue"), "AMOUNT"));
+				dishonChequeSummaryList.add(dishonChequeSummary);	
+			}
+			consumerObj.setDishonChequeSummary(dishonChequeSummaryList);
+		}
+
+		if(consPotentialAndCurrentLiabilitiesDataList != null) {
+			potAndCurrLiabilitiesList = new ArrayList<PotAndCurrLiabilities>();
+			for(int x=0; x<consPotentialAndCurrentLiabilitiesDataList.length(); x++) {
+				PotAndCurrLiabilities potAndCurrLiability = new PotAndCurrLiabilities();
+				JSONObject consPotentialAndCurrentLiabilitiesData = consPotentialAndCurrentLiabilitiesDataList.getJSONObject(x);
+				potAndCurrLiability.setCurrency(consPotentialAndCurrentLiabilitiesData.getString("bureauCurrency") != null ? consPotentialAndCurrentLiabilitiesData.getString("bureauCurrency") : "");
+				potAndCurrLiability.setOwnership(consPotentialAndCurrentLiabilitiesData.getString("ownership") != null ? consPotentialAndCurrentLiabilitiesData.getString("ownership") : "");
+				potAndCurrLiability.setNoOfCreditFacilities(formatValue(consPotentialAndCurrentLiabilitiesData.get("noOfCreditFacilities"), "NUMBER"));
+				potAndCurrLiability.setTotalAmountGrantedLimit(formatValue(consPotentialAndCurrentLiabilitiesData.get("totalAmountGranted"), "AMOUNT"));
+				potAndCurrLiability.setTotalOutstanding(formatValue(consPotentialAndCurrentLiabilitiesData.get("totalOutstanding"), "AMOUNT"));
+				potAndCurrLiabilitiesList.add(potAndCurrLiability);	
+			}
+			consumerObj.setPotAndCurrLiabilities(potAndCurrLiabilitiesList);
+		}
+
+		if(consSettledCreditFacilitiesSummaryDataList != null) {
+			settledCFSummaryList = new ArrayList<SettledCFSummary>();
+			for(int x=0; x<consSettledCreditFacilitiesSummaryDataList.length(); x++) {
+				SettledCFSummary settledCFSummary = new SettledCFSummary();
+				JSONObject consSettledCreditFacilitiesSummaryData = consSettledCreditFacilitiesSummaryDataList.getJSONObject(x);
+				settledCFSummary.setCurrency(consSettledCreditFacilitiesSummaryData.getString("currency") != null ? consSettledCreditFacilitiesSummaryData.getString("currency") : "");
+				settledCFSummary.setOwnership(consSettledCreditFacilitiesSummaryData.getString("ownership") != null ? consSettledCreditFacilitiesSummaryData.getString("ownership") : "");
+				settledCFSummary.setNoOfCreditFacilities1(formatValue(consSettledCreditFacilitiesSummaryData.get("noOfCreditFacilities1"), "NUMBER"));
+				settledCFSummary.setAmountGranted1(formatValue(consSettledCreditFacilitiesSummaryData.get("amountGranted1"), "AMOUNT"));
+				settledCFSummary.setNoOfCreditFacilities2(formatValue(consSettledCreditFacilitiesSummaryData.get("noOfCreditFacilities2"), "NUMBER"));
+				settledCFSummary.setAmountGranted2(formatValue(consSettledCreditFacilitiesSummaryData.get("amountGranted2"), "AMOUNT"));
+				settledCFSummary.setNoOfCreditFacilities3(formatValue(consSettledCreditFacilitiesSummaryData.get("noOfCreditFacilities3"), "NUMBER"));
+				settledCFSummary.setAmountGranted3(formatValue(consSettledCreditFacilitiesSummaryData.get("amountGranted3"), "AMOUNT"));
+				settledCFSummary.setNoOfCreditFacilities4(formatValue(consSettledCreditFacilitiesSummaryData.get("noOfCreditFacilities4"), "NUMBER"));
+				settledCFSummary.setAmountGranted4(formatValue(consSettledCreditFacilitiesSummaryData.get("amountGranted4"), "AMOUNT"));
+				settledCFSummary.setNoOfCreditFacilities5(formatValue(consSettledCreditFacilitiesSummaryData.get("noOfCreditFacilities5"), "NUMBER"));
+				settledCFSummary.setAmountGranted5(formatValue(consSettledCreditFacilitiesSummaryData.get("amountGranted5"), "AMOUNT"));
+				settledCFSummaryList.add(settledCFSummary);	
+			}
+			consumerObj.setSettledCFSummary(settledCFSummaryList);
+		}
+		
+		if(consCatalogueDescriptionDataList != null) {
+			catalogueDescriptionList = new ArrayList<CatalogueDescription>();
+			for(int x=0; x<consCatalogueDescriptionDataList.length(); x++) {
+				CatalogueDescription catalogueDescription = new CatalogueDescription();
+				JSONObject consCatalogueDescriptionData = consCatalogueDescriptionDataList.getJSONObject(x);
+				catalogueDescription.setCatgLabel(consCatalogueDescriptionData.getString("catgLabel") != null ? consCatalogueDescriptionData.getString("catgLabel") : "");
+				catalogueDescription.setCatgValue(consCatalogueDescriptionData.getString("catgValue") != null ? consCatalogueDescriptionData.getString("catgValue") : "");
+				catalogueDescriptionList.add(catalogueDescription);	
+			}
+			consumerObj.setCatalogueDescription(catalogueDescriptionList);
+		}
+					
+		if(consCreditFacilityDetailsLast24MonthsDataList != null) {
+			List<String> last24MonthList = new ArrayList<String>();
+			last24Months = new Last24Months();
+			for(int x=0; x<consCreditFacilityDetailsLast24MonthsDataList.length(); x++) {
+				JSONObject consCreditFacilityDetailsLast24MonthsData = consCreditFacilityDetailsLast24MonthsDataList.getJSONObject(x);
+				if(!(last24MonthList.contains(consCreditFacilityDetailsLast24MonthsData.getString("month")))) {
+					last24MonthList.add(consCreditFacilityDetailsLast24MonthsData.getString("month"));					
+				}
+			}
+			
+			last24Months.setMonth1(last24MonthList.get(0) != null ? last24MonthList.get(0) : "");
+			last24Months.setMonth2(last24MonthList.get(1) != null ? last24MonthList.get(1) : "");
+			last24Months.setMonth3(last24MonthList.get(2) != null ? last24MonthList.get(2) : "");
+			last24Months.setMonth4(last24MonthList.get(3) != null ? last24MonthList.get(3) : "");
+			last24Months.setMonth5(last24MonthList.get(4) != null ? last24MonthList.get(4) : "");
+			last24Months.setMonth6(last24MonthList.get(5) != null ? last24MonthList.get(5) : "");
+			last24Months.setMonth7(last24MonthList.get(6) != null ? last24MonthList.get(6) : "");
+			last24Months.setMonth8(last24MonthList.get(7) != null ? last24MonthList.get(7) : "");
+			last24Months.setMonth9(last24MonthList.get(8) != null ? last24MonthList.get(8) : "");
+			last24Months.setMonth10(last24MonthList.get(9) != null ? last24MonthList.get(9) : "");
+			last24Months.setMonth11(last24MonthList.get(10) != null ? last24MonthList.get(10) : "");
+			last24Months.setMonth12(last24MonthList.get(11) != null ? last24MonthList.get(11) : "");
+			last24Months.setMonth13(last24MonthList.get(12) != null ? last24MonthList.get(12) : "");
+			last24Months.setMonth14(last24MonthList.get(13) != null ? last24MonthList.get(13) : "");
+			last24Months.setMonth15(last24MonthList.get(14) != null ? last24MonthList.get(14) : "");
+			last24Months.setMonth16(last24MonthList.get(15) != null ? last24MonthList.get(15) : "");
+			last24Months.setMonth17(last24MonthList.get(16) != null ? last24MonthList.get(16) : "");
+			last24Months.setMonth18(last24MonthList.get(17) != null ? last24MonthList.get(17) : "");
+			last24Months.setMonth19(last24MonthList.get(18) != null ? last24MonthList.get(18) : "");
+			last24Months.setMonth20(last24MonthList.get(19) != null ? last24MonthList.get(19) : "");
+			last24Months.setMonth21(last24MonthList.get(20) != null ? last24MonthList.get(20) : "");
+			last24Months.setMonth22(last24MonthList.get(21) != null ? last24MonthList.get(21) : "");
+			last24Months.setMonth23(last24MonthList.get(22) != null ? last24MonthList.get(22) : "");
+			last24Months.setMonth24(last24MonthList.get(23) != null ? last24MonthList.get(23) : "");			
+							
+			consumerObj.setLast24Months(last24Months);
+		}
+		
+		if(consSettledCreditFacilitiesSummaryDataList != null) {
+			last5Years = new Last5Years();
+			JSONObject consSettledCreditFacilitiesSummary1Data = consSettledCreditFacilitiesSummaryDataList.getJSONObject(1);
+			last5Years.setYear1(consSettledCreditFacilitiesSummary1Data.getString("year1") != null ? consSettledCreditFacilitiesSummary1Data.getString("year1") : "");
+			last5Years.setYear2(consSettledCreditFacilitiesSummary1Data.getString("year2") != null ? consSettledCreditFacilitiesSummary1Data.getString("year2") : "");
+			last5Years.setYear3(consSettledCreditFacilitiesSummary1Data.getString("year3") != null ? consSettledCreditFacilitiesSummary1Data.getString("year3") : "");
+			last5Years.setYear4(consSettledCreditFacilitiesSummary1Data.getString("year4") != null ? consSettledCreditFacilitiesSummary1Data.getString("year4") : "");
+			last5Years.setYear5(consSettledCreditFacilitiesSummary1Data.getString("year5") != null ? consSettledCreditFacilitiesSummary1Data.getString("year5") : "");	
+			consumerObj.setLast5Years(last5Years);
+		}
+
+		if(consDisputeDetailsDataList != null) {
+			disputeDetailsList = new ArrayList<DisputeDetails>();
+			for(int x=0; x<consDisputeDetailsDataList.length(); x++) {	
+				DisputeDetails disputeDetail = new DisputeDetails();
+				JSONObject consDisputeDetailsData = consDisputeDetailsDataList.getJSONObject(x);
+				disputeDetail.setDescription(consDisputeDetailsData.getString("description") != null ? consDisputeDetailsData.getString("description") : "");
+				disputeDetailsList.add(disputeDetail);
+			}
+			consumerObj.setDisputeDetails(disputeDetailsList);
+		}
+					
+		return consumerObj;
+	}
+	 
+	 public String getCellColor(String value){
+		 String color = "background:white";
+		 if(value != null  && !value.equals("") && !value.equals("--") && !value.equals("ND") && !value.equals("Cls")){
+			 if(!value.matches("-?\\d+(\\.\\d+)?")) {
+				 value = value.trim();
+				 if(value.equalsIgnoreCase("OK")){
+					 color = "background:#88cc00";
+				 }else{	
+					 //color = "background:darkcyan; color:white";
+					 color = "background:white";
+				 }			 
+			 }else{
+				 int number = Integer.parseInt(value);
+				 if(number > 90){        
+					 color = "background:#e60000; color:white";
+				 }else if (number <= 90){
+					 color = "background:yellow";
+				 }
+			 }
+		 }	 
+		return color + "; text-align: center";	
+	}
+	
+	public String formatValue(Object value, String type) {	
+		String returnVal = "";
+		if(!value.equals(null)){
+			if(type.equals("DATE")) {
+				String date = value.toString().substring(0,10);
+	        	String day = date.split("-")[2];
+	        	String month = date.split("-")[1];
+	        	String year = date.split("-")[0];
+	        	returnVal = day+"/"+month+"/"+year;
+	        	
+			}else if(type.equals("AMOUNT")) {
+				NumberFormat nf = NumberFormat.getCurrencyInstance();
+				DecimalFormatSymbols decimalFormatSymbols = ((DecimalFormat) nf).getDecimalFormatSymbols();
+				// show hide currency symbol
+				decimalFormatSymbols.setCurrencySymbol("");
+				((DecimalFormat) nf).setDecimalFormatSymbols(decimalFormatSymbols);
+				// show hide decimal points
+				nf.setMaximumFractionDigits(0);
+				returnVal = nf.format(value).trim();
+				
+			}else if(type.equals("NUMBER")) {
+				returnVal = value.toString();				
+			} 
+		}
+		return returnVal;
+	}
+	 	
+}

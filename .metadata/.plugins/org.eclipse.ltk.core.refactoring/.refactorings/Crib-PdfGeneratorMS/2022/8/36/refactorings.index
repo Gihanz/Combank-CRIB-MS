@@ -1,0 +1,26 @@
+1661673000387	Rename package 'com.nable.crib.corp'
+1661673021347	Rename package 'com.nable.crib.corp.config'
+1661673035371	Rename package 'com.nable.crib.corp.controller'
+1661673049651	Rename package 'com.nable.crib.corp.exception'
+1661673078800	Delete elements
+1661673089266	Rename package 'com.nable.crib.corp.request'
+1661673097154	Rename package 'com.nable.crib.corp.response'
+1661673107489	Rename package 'com.nable.crib.corp.security'
+1661673116705	Rename package 'com.nable.crib.corp.service'
+1661673122169	Delete element
+1661673150546	Delete element
+1661673159897	Rename package 'com.nable.crib.corp.util'
+1661673167474	Rename package 'com.nable.crib.corp.validation'
+1661673189333	Delete elements
+1661673210445	Rename type 'CorporateService'
+1661673442083	Delete elements
+1661673467290	Delete element
+1661673510727	Delete elements
+1661673589490	Rename type 'CorporateController'
+1661673619460	Rename type 'CorporateMSApplication'
+1661677732485	Rename type 'ConsumerPdfResponse'
+1661678558331	Rename type 'PdfGeneratorService'
+1661678577815	Copy compilation unit
+1661684920504	Delete element
+1661706947431	Rename package 'com.nable.crib.pdf.bean'
+1661711288598	Delete element

@@ -1,0 +1,12 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 11, 2022 - 1:05:19 AM
+ *  ***************************************
+ */
+
+package com.nable.crib.model;
+
+public class ConLast24Months {
+
+}

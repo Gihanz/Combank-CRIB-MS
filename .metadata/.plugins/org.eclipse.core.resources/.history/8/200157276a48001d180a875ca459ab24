@@ -1,0 +1,51 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 28, 2022 - 12:30:53 PM
+ *  ***************************************
+ */
+
+package com.nable.crib.comn.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.nable.crib.comn.model.RequestMain;
+import com.nable.crib.comn.repository.RequestMainRepository;
+import com.nable.crib.comn.response.CommonResponse;
+import com.nable.crib.comn.response.RequestMainResponse;
+import com.nable.crib.comn.response.Status;
+
+@Service("RequestMainService")
+@Transactional
+public class RequestMainService {
+
+	@Autowired
+	private RequestMainRepository requestMainRepository;
+	
+	public RequestMainResponse get(Long id) {	
+		
+		RequestMainResponse requestMainResponse = new RequestMainResponse();
+		
+		requestMainResponse.setRequestMain(requestMainRepository.findById(id).get());
+		requestMainResponse.setStatus(Status.SUCCESS.getStatus());
+		requestMainResponse.setStatusCode(Status.SUCCESS.getStatusCode());
+		requestMainResponse.setMessage("Get Request Main Successful");
+		
+		return requestMainResponse;	
+	}
+	
+	public RequestMainResponse save(RequestMain requestMain) {	
+		
+		RequestMainResponse requestMainResponse = new RequestMainResponse();
+		
+		requestMainResponse.setRequestMain(requestMainRepository.save(requestMain));
+		requestMainResponse.setStatus(Status.SUCCESS.getStatus());
+		requestMainResponse.setStatusCode(Status.SUCCESS.getStatusCode());
+		requestMainResponse.setMessage("Insert Request Main Successful");
+		
+		return requestMainResponse;
+	}
+
+}

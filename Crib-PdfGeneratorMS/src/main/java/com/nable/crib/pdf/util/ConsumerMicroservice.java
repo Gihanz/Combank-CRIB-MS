@@ -1,0 +1,52 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 28, 2022 - 9:43:49 PM
+ *  ***************************************
+ */
+
+package com.nable.crib.pdf.util;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+@Component
+@PropertySource("classpath:application.properties")
+public class ConsumerMicroservice {
+	
+	static Logger log = LoggerFactory.getLogger(ConsumerMicroservice.class);
+	
+	@Autowired
+    private RestTemplate restTemplate;
+    
+    @Value("${microservice.consumer.url:http://CRIB-ConsumerMS}")
+    private String consumerUrl;
+    
+    public JSONObject getConsumerCribData(Long requestDetailId) {
+    	
+    	try {
+	    	String baseUrl = consumerUrl + "/getConsumerCribData/"+requestDetailId;
+	    	
+	    	HttpHeaders headers = new HttpHeaders();
+	    	HttpEntity <String> requestHttpEntity = new HttpEntity<String>(headers);
+	
+	    	String response = restTemplate.exchange(baseUrl, HttpMethod.GET, requestHttpEntity, String.class).getBody();
+	    	return new JSONObject(response);
+			
+		} catch (JSONException e) {
+			log.error("Error occurred : ", e.toString());
+			return new JSONObject();			
+		}
+    }
+
+}

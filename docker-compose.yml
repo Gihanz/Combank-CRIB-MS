@@ -1,0 +1,83 @@
+version: '3.7'
+services:
+  discovery-server:
+    build: DiscoveryServer
+    container_name: discovery-server
+    image: discovery-server
+    ports:
+      - "8761:8761"
+    networks:
+      - crib-ms
+    volumes:
+      - crib-vol:/nable/eureka/logs
+  crib-common-utils-ms:
+    build: Crib-CommonUtilsMS
+    container_name: crib-common-utils-ms
+    image: crib-common-utils-ms
+    ports:
+      - "8012:8012"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      - discovery-server
+    networks:
+      - crib-ms
+    volumes:
+      - crib-vol:/nable/crib/common/logs
+  crib-consumer-ms:
+    build: Crib-ConsumerMS
+    container_name: crib-consumer-ms
+    image: crib-consumer-ms
+    ports:
+      - "8013:8013"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      - discovery-server
+    networks:
+      - crib-ms
+    extra_hosts:
+      - "DESKTOP-EPAB5JP:192.168.50.151"
+    volumes:
+      - crib-vol:/nable/crib/consumer/logs
+  crib-corporate-ms:
+    build: Crib-CorporateMS
+    container_name: crib-corporate-ms
+    image: crib-corporate-ms
+    ports:
+      - "8014:8014"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      - discovery-server
+    networks:
+      - crib-ms
+    extra_hosts:
+      - "DESKTOP-EPAB5JP:192.168.50.151"
+    volumes:
+      - crib-vol:/nable/crib/corporate/logs
+  crib-pdf-generator-ms:
+    build: Crib-PdfGeneratorMS
+    container_name: crib-pdf-generator-ms
+    image: crib-pdf-generator-ms
+    ports:
+      - "8015:8015"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      - discovery-server
+    networks:
+      - crib-ms
+    volumes:
+      - crib-vol:/nable/crib/pdfGenerator/logs
+networks:
+  crib-ms:
+    name: crib-ms
+    driver: bridge
+volumes:
+  crib-vol:
+    name: crib-vol

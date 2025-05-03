@@ -1,0 +1,12 @@
+/*
+ *  ***************************************
+ *  * @author Gihan Liyanage
+ *  * @date Aug 11, 2022 - 12:52:34 AM
+ *  ***************************************
+ */
+
+package com.nable.crib.model;
+
+public class ConEmploymentDetails {
+
+}

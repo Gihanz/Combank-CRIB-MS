@@ -1,0 +1,54 @@
+1660463937275	Delete element
+1660463942534	Delete element
+1660463973347	Delete element
+1660558663267	Rename type 'RequestErrors'
+1660573791860	Move compilation units
+1660715995788	Delete element
+1660735461612	Delete element
+1660839982117	Delete elements
+1660844025778	Delete elements
+1660854941466	Delete element
+1660855289505	Delete elements
+1660856727049	Rename resource 'bootstrap.properties'
+1660856773406	Rename resource 'bootstrapmmm.properties'
+1660856783120	Rename resource 'logback-spring.xml'
+1660856864618	Rename resource 'logback-springmmm.xml'
+1660975142911	Rename type 'CribOperationsApplication'
+1660975174266	Rename package 'com.nable.crib'
+1660975204057	Rename package 'com.nable.crib.config'
+1660975233118	Rename package 'com.nable.crib.controller'
+1660975244299	Rename type 'CribController'
+1660975444581	Rename package 'com.nable.crib.exception'
+1660975528650	Delete element
+1660975545213	Delete element
+1660975571754	Rename type 'CribApiInvokeRequest'
+1660975805030	Rename package 'com.nable.crib.request'
+1660975858862	Rename type 'H2HResponse'
+1660975863583	Move compilation unit
+1660975922330	Delete element
+1660975952793	Rename package 'com.nable.crib.model.audit'
+1660975967744	Rename package 'com.nable.crib.model.consumer'
+1660975984314	Rename type 'H2HResponseRepository'
+1660975988592	Move compilation unit
+1660975995217	Delete element
+1660976012282	Rename package 'com.nable.crib.consumer'
+1660976019383	Rename package 'com.nable.crib.consumer.config'
+1660976026684	Rename package 'com.nable.crib.consumer.controller'
+1660976032309	Rename package 'com.nable.crib.consumer.exception'
+1660976041229	Rename package 'com.nable.crib.consumer.model'
+1660976050659	Rename package 'com.nable.crib.consumer.model.audit'
+1660976086443	Rename package 'com.nable.crib.consumer.request'
+1660976103152	Move compilation unit
+1660976110064	Delete element
+1660976129350	Rename package 'com.nable.crib.security'
+1660976146684	Rename package 'com.nable.crib.repository.consumer'
+1660976160543	Rename package 'com.nable.crib.response'
+1660976197559	Rename package 'com.nable.crib.service'
+1660976209722	Delete elements
+1660976240509	Rename package 'com.nable.crib.util'
+1660976275278	Rename package 'com.nable.crib.util.encrypt'
+1660976307967	Rename package 'com.nable.crib.util.soap'
+1660976319043	Rename package 'com.nable.crib.validation'
+1660977988328	Rename type 'ConRspOperations'
+1660983793818	Rename package 'com.nable.crib'
+1660983832273	Rename type 'CribOperationsApplicationTests'
